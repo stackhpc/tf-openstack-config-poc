@@ -49,18 +49,21 @@ resource "openstack_identity_group_v3" "B" {
   description = "Group B"
 }
 
-# -- roles - NB *not* per-project
-# TODO: is using data ones for these correct?
-data  "openstack_identity_role_v3" "member" {
-  name = "member"
+# role assignments: many-to-many users/projects/roles
+# TODO: hard to have meaninful names for these!
+
+module "roleA" {
+  source = "./modules/role"
+  role_name = "member"
+  group_id = openstack_identity_group_v3.A.id
+  project_id = module.project_1.id
 }
 
-data  "openstack_identity_role_v3" "reader" {
-  name = "reader"
-}
-
-data  "openstack_identity_role_v3" "loadbalancer" {
-  name = "load-balancer_member"
+module "roleB" {
+  source = "./modules/role"
+  role_name = "reader"
+  group_id    = openstack_identity_group_v3.B.id
+  project_id = module.project_2.id
 }
 
 # -- faked stuff, will be done by federation --
@@ -78,19 +81,3 @@ resource "openstack_identity_user_membership_v3" "steveb_B" {
   group_id = openstack_identity_group_v3.B.id
 }
 # -- end of faked stuff --
-
-
-
-# role assignments: many-to-many users/projects/roles
-# TODO: hard to have meaninful names for these!
-resource "openstack_identity_role_assignment_v3" "A" {
-  group_id    = openstack_identity_group_v3.A.id
-  project_id = module.project_1.id
-  role_id    = data.openstack_identity_role_v3.member.id
-}
-
-resource "openstack_identity_role_assignment_v3" "B" {
-  group_id    = openstack_identity_group_v3.B.id
-  project_id = module.project_2.id
-  role_id    = data.openstack_identity_role_v3.reader.id
-}
