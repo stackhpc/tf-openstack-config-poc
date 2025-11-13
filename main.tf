@@ -1,10 +1,12 @@
 module "openstack" {
     source = "./modules/openstack"
+
+
+  # TODO: domain
     projects = {
       sb-test-1 = {
       description = "Project One"
-      # project_domain?
-      # user_domain?
+      # project_domain/user_domain? TF only has domain_id and is_domain
       quotas = {
           volumes   = 2
           snapshots = 4
@@ -35,34 +37,23 @@ module "openstack" {
       }
     }
   }
-}
+  groups = {
+    GroupA = "Group A"
+    GroupB = "Group B"
+  }
 
-# -- groups  --
-resource "openstack_identity_group_v3" "A" {
-  name        = "GroupA"
-  description = "Group A"
-}
-
-resource "openstack_identity_group_v3" "B" {
-  name        = "GroupB"
-  description = "Group B"
-}
-
-# role assignments: many-to-many users/projects/roles
-# TODO: hard to have meaninful names for these!
-
-module "roleA" {
-  source = "./modules/role"
-  role_name = "member"
-  group_id = openstack_identity_group_v3.A.id
-  project_id = module.openstack.projects["sb-test-1"]
-}
-
-module "roleB" {
-  source = "./modules/role"
-  role_name = "reader"
-  group_id    = openstack_identity_group_v3.B.id
-  project_id = module.openstack.projects["sb-test-2"]
+  role_assignments = [
+    {
+      role = "member"
+      group = "GroupA"
+      project = "sb-test-1"
+    },
+    {
+      role = "reader"
+      group = "GroupB"
+      project = "sb-test-2"
+    }
+  ]
 }
 
 # -- faked stuff, will be done by federation --
@@ -70,13 +61,18 @@ data "openstack_identity_user_v3" "steveb" {
   name = "steveb_stack"
 }
 
+# TODO: fixme!
 resource "openstack_identity_user_membership_v3" "steveb_A" {
   user_id  = data.openstack_identity_user_v3.steveb.id
-  group_id = openstack_identity_group_v3.A.id
+  group_id = module.openstack.groups["GroupA"]
 }
 
 resource "openstack_identity_user_membership_v3" "steveb_B" {
   user_id  = data.openstack_identity_user_v3.steveb.id
-  group_id = openstack_identity_group_v3.B.id
+  group_id = module.openstack.groups["GroupB"]
 }
 # -- end of faked stuff --
+
+# output "debug" {
+#   value = module.openstack.groups
+# }
