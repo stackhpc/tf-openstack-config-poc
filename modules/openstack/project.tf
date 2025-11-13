@@ -37,5 +37,4 @@ resource "openstack_compute_quotaset_v2" "project" {
   server_group_members = lookup(each.value.quotas, "server_group_members", null)
 }
 
-# # What about manila? doens't appear to be a thing for that
-
+# TODO: What about manila? doens't appear to be a quota for that

@@ -45,3 +45,33 @@ worked on 3rd attempt :-(
 - network RBAC
 - work out if we want to abstract it further
 - sort out defaults/typing etc
+
+
+## Comparison to stackhpc/openstack-config
+
+C.f.:
+- https://github.com/stackhpc/openstack-config/blob/main/etc/openstack-config/openstack-config.yml
+- https://github.com/stackhpc/ansible-collection-openstack/tree/main/roles
+
+This is not complete either in breadth or depth!
+
+- TODO: openstack_domains - do we create these?? Do we need to be able to create projects etc in existing domains?
+- YES: openstack_projects:
+  - YES: name
+  - YES: description
+  - TODO: project_domain
+  - TODO: user_domain
+  - NO: users
+  - NO: keypairs
+  - YES: quotas
+- NO: openstack_routers
+- NO: openstack_security_groups
+- TODO: openstack_networks_rbac
+- NO: openstack_flavors
+- NO: openstack_host_aggregates
+- NO: openstack_images
+- OUT OF SCOPE: openstack_image_elements
+- OUT OF SCOPE: openstack_image_git_elements
+- OUT OF SCOPE?: openstack_container_clusters_templates
+- NO: openstack_ratings_hashmap_field_mappings
+- NO: openstack_ratings_hashmap_service_mappings
