@@ -46,6 +46,7 @@ module "openstack" {
     {
       role = "member"
       group = "GroupA"
+      # TODO: user
       project = "sb-test-1"
     },
     {

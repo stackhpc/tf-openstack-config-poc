@@ -33,6 +33,13 @@ Also not idempotent:
     }
 ```
 
+Hit this:
+```
+ Error: Error unassigning openstack_identity_role_assignment_v3 /ae96a9616a654075ba50a1e3daaef19f/7aef976453af48078d1740fa5542c974//0c7cb73501e740b995b660dc1b7d53fa: Successfully re-authenticated, but got error executing request: Expected HTTP response code [204] when accessing [DELETE https://arcus.staging.openstack.hpc.cam.ac.uk:5000/v3/projects/ae96a9616a654075ba50a1e3daaef19f/groups/7aef976453af48078d1740fa5542c974/roles/0c7cb73501e740b995b660dc1b7d53fa], but got 401 instead: {"error":{"code":401,"message":"The request you have made requires authentication.","title":"Unauthorized"}}
+ ```
+
+worked on 3rd attempt :-(
+
 ## TODO
 - flavor permissions
 - network RBAC

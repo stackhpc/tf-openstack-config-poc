@@ -1,8 +1,3 @@
-
-# variable "name" {}
-# variable "description" {}
-# variable "quotas" {}
-
 resource "openstack_identity_project_v3" "project" {
   for_each = var.projects
   
@@ -32,7 +27,7 @@ resource "openstack_blockstorage_quotaset_v3" "project" {
 
 resource "openstack_compute_quotaset_v2" "project" {
   for_each = var.projects
-  
+
   project_id = openstack_identity_project_v3.project[each.key].id
   key_pairs            = lookup(each.value.quotas, "key_pairs", null)
   ram                  = lookup(each.value.quotas, "ram", null)
