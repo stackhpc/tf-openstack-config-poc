@@ -1,40 +1,29 @@
-module "openstack" {
-    source = "./modules/openstack"
+variable "arcus_small_quota" {
+  type = any
+  default = {
+    instances = 20
+    cores = 200
+    ram = 512000 # 500GB
+    floating_ips = 3
+    routers = 3
+    ports = 500
+  }
+}
 
+module "openstack" {
+  source = "./modules/openstack"
 
   # TODO: domain
-    projects = {
-      sb-test-1 = {
+  # TODO: add ci/cd - PR tofu fmt, plan/approval (on merge) (don't run external PRs)
+  projects = {
+    sb-test-1 = {
       description = "Project One"
       # project_domain/user_domain? TF only has domain_id and is_domain
-      quotas = {
-          volumes   = 2
-          snapshots = 4
-          gigabytes = 10
-          per_volume_gigabytes = 2
-          backups = 4
-          backup_gigabytes = 10
-          groups = 5
-          volume_type_quota = {
-              volumes_arcus-staging-ceph01-rbd = 5
-          }
-          key_pairs            = 10
-          ram                  = 40960
-          cores                = 32
-          instances            = 5
-          server_groups        = 2
-          server_group_members = 6
-      }
-      # users = {}
-      },
-      sb-test-2 = {
+      quotas = var.arcus_small_quota
+    },
+    sb-test-2 = {
       description = "Project Two"
-      quotas = {
-          # TODO: need to have at least one blockstorage and one compute quota set!
-          # so maybe split them out?
-          volumes = 2
-          cores = 64
-      }
+      quotas = var.arcus_small_quota
     }
   }
   groups = {
@@ -44,17 +33,29 @@ module "openstack" {
 
   role_assignments = [
     {
-      role = "member"
+      role  = "member"
       group = "GroupA"
-      # TODO: user
+      
       project = "sb-test-1"
     },
     {
-      role = "reader"
-      group = "GroupB"
+      role    = "reader"
+      group   = "GroupB"
       project = "sb-test-2"
     }
   ]
+
+  # TODO: user
+
+  # TODO: flavor_rbac (yes as separate thing)
+  # TODO: why is this already in there?
+  # network_rbac = [
+  #   {
+  #     network = "CUDN-Internet"
+  #     projects = ["sb-test-1", "sb-test-2"]
+  #     action = "access_as_external"
+  #   },
+  # ]
 }
 
 # -- faked stuff, will be done by federation --
@@ -74,6 +75,6 @@ resource "openstack_identity_user_membership_v3" "steveb_B" {
 }
 # -- end of faked stuff --
 
-# output "debug" {
-#   value = module.openstack.groups
-# }
+output "debug" {
+  value = module.openstack.debug
+}
