@@ -1,6 +1,71 @@
 # README
 
-## Issues
+Proof of concept for an OpenTofu-based replacement for the Ansible [openstack-config](https://github.com/stackhpc/openstack-config/) for projects with federated users.
+
+This contains:
+
+- `modules/openstack`: An OpenTofu module to manage OpenStack projects and related
+  configuration. A module instantiation may define multiple projects within a
+  single domain.
+- `main.tf`: An example of using that module to define two projects, with
+  relevant groups and role assignments. An existing Keystone user is used to
+  "fake" a federated user. The example also demonstrates how OpenTofu variables
+  can be used similarly to indirection in Ansible to define the same quotas once
+  for multiple projects.
+
+This is not production-ready and does not contain any variable typing/checks or
+docs.
+
+## Usage
+
+With a `clouds.yaml` and `OS_CLOUD`/`OS_CLIENT_CONFIG_FILE` set as necessary run
+
+```shell
+tofu init
+tofu apply
+```
+
+The generated resources can be deleted using
+```shell
+tofu destroy
+```
+
+By default OpenTofu will process 10 operations concurrently as it walks the
+resource graph. This can be increased using the `-parallelism=N` option.
+
+## Comparison to stackhpc/openstack-config
+
+This section provides an initial comparison of functionality vs:
+- https://github.com/stackhpc/openstack-config/blob/main/etc/openstack-config/openstack-config.yml
+- https://github.com/stackhpc/ansible-collection-openstack/tree/main/roles
+
+Note this is not currentky complete either in breadth or depth!
+
+- TODO: openstack_domains
+  - Still don't entirely understand TF approach/resources for these.
+  - Expecting domains to be pre-existing, but may want to support multiple domains.
+- YES: openstack_projects:
+  - YES: name
+  - YES: description
+  - TODO: project_domain
+  - TODO: user_domain
+  - NO: users
+  - NO: keypairs
+  - YES: quotas
+- NO: openstack_routers
+- NO: openstack_security_groups
+- TODO: openstack_networks_rbac
+- TODO: openstack_flavors
+    - will provide flavor RBAC instead
+- NO: openstack_host_aggregates
+- NO: openstack_images
+- OUT OF SCOPE: openstack_image_elements
+- OUT OF SCOPE: openstack_image_git_elements
+- OUT OF SCOPE: openstack_container_clusters_templates
+- NO: openstack_ratings_hashmap_field_mappings
+- NO: openstack_ratings_hashmap_service_mappings
+
+## Current Issues
 Hit this on apply:
 
 ```
@@ -39,39 +104,3 @@ Hit this:
  ```
 
 worked on 3rd attempt :-(
-
-## TODO
-- flavor permissions
-- network RBAC
-- work out if we want to abstract it further
-- sort out defaults/typing etc
-
-
-## Comparison to stackhpc/openstack-config
-
-C.f.:
-- https://github.com/stackhpc/openstack-config/blob/main/etc/openstack-config/openstack-config.yml
-- https://github.com/stackhpc/ansible-collection-openstack/tree/main/roles
-
-This is not complete either in breadth or depth!
-
-- TODO: openstack_domains - do we create these?? Do we need to be able to create projects etc in existing domains?
-- YES: openstack_projects:
-  - YES: name
-  - YES: description
-  - TODO: project_domain
-  - TODO: user_domain
-  - NO: users
-  - NO: keypairs
-  - YES: quotas
-- NO: openstack_routers
-- NO: openstack_security_groups
-- TODO: openstack_networks_rbac
-- NO: openstack_flavors
-- NO: openstack_host_aggregates
-- NO: openstack_images
-- OUT OF SCOPE: openstack_image_elements
-- OUT OF SCOPE: openstack_image_git_elements
-- OUT OF SCOPE?: openstack_container_clusters_templates
-- NO: openstack_ratings_hashmap_field_mappings
-- NO: openstack_ratings_hashmap_service_mappings
