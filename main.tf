@@ -1,12 +1,12 @@
 variable "arcus_small_quota" {
   type = any
   default = {
-    instances = 20
-    cores = 200
-    ram = 512000 # 500GB
+    instances    = 20
+    cores        = 200
+    ram          = 512000 # 500GB
     floating_ips = 3
-    routers = 3
-    ports = 500
+    routers      = 3
+    ports        = 500
   }
 }
 
@@ -23,7 +23,7 @@ module "openstack" {
     },
     sb-test-2 = {
       description = "Project Two"
-      quotas = var.arcus_small_quota
+      quotas      = var.arcus_small_quota
     }
   }
   groups = {
@@ -33,9 +33,8 @@ module "openstack" {
 
   role_assignments = [
     {
-      role  = "member"
-      group = "GroupA"
-      
+      role    = "member"
+      group   = "GroupA"
       project = "sb-test-1"
     },
     {
@@ -45,10 +44,11 @@ module "openstack" {
     }
   ]
 
-  # TODO: user
+  # TODO: users
 
-  # TODO: flavor_rbac (yes as separate thing)
-  # TODO: why is this already in there?
+  # TODO: flavor_rbac
+  # agreed to keep separate from network, as for ansible
+  # e.g.
   # network_rbac = [
   #   {
   #     network = "CUDN-Internet"
@@ -63,7 +63,6 @@ data "openstack_identity_user_v3" "steveb" {
   name = "steveb_stack"
 }
 
-# TODO: fixme!
 resource "openstack_identity_user_membership_v3" "steveb_A" {
   user_id  = data.openstack_identity_user_v3.steveb.id
   group_id = module.openstack.groups["GroupA"]
