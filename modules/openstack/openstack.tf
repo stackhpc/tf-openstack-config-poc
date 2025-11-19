@@ -24,15 +24,20 @@ variable "network_rbac" {
 }
 
 # TODO: more outputs?
-# TODO: should we return the entire structure, not just ids?
 output "projects" {
-    value = {for k, v in openstack_identity_project_v3.project: k => v.id}
+    #value = {for k, v in openstack_identity_project_v3.project: k => v.id}
+    value = openstack_identity_project_v3.project
 }
 
 output "groups" {
-    value = {for k, v in openstack_identity_group_v3.group: k => v.id}
+    #value = {for k, v in openstack_identity_group_v3.group: k => v.id}
+    value = openstack_identity_group_v3.group
 }
 
-output "debug" {
-    value = {for v in flatten([for rbac in var.network_rbac: [for project in rbac.projects: {rbac=rbac, project=project}]]): "${v.rbac.network}:${v.project}" => v}
+output "role_assignments" {
+    value = openstack_identity_role_assignment_v3.role_assign
 }
+
+# output "debug" {
+#     value = {for v in flatten([for rbac in var.network_rbac: [for project in rbac.projects: {rbac=rbac, project=project}]]): "${v.rbac.network}:${v.project}" => v}
+# }

@@ -66,12 +66,12 @@ data "openstack_identity_user_v3" "steveb" {
 
 resource "openstack_identity_user_membership_v3" "steveb_A" {
   user_id  = data.openstack_identity_user_v3.steveb.id
-  group_id = module.openstack.groups["GroupA"]
+  group_id = module.openstack.groups["GroupA"].id
 }
 
 resource "openstack_identity_user_membership_v3" "steveb_B" {
   user_id  = data.openstack_identity_user_v3.steveb.id
-  group_id = module.openstack.groups["GroupB"]
+  group_id = module.openstack.groups["GroupB"].id
 }
 # -- end of faked stuff --
 
