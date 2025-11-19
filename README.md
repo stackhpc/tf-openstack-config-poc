@@ -116,16 +116,17 @@ OpenTofu can import existing resources into state. This requires:
   cloud resources map to which state resources.
 
 This repo includes a tool which can help generate both of these. This is very
-much WIP. Currently it only supports projects and configuration. It can be run
+much WIP. Currently it only supports projects. It can be run
 using:
 
 ```shell
 python -m migrate project $PROJECT_NAME
 ```
 
-and it will output a `project` definition configuration which can be added to
-your `openstack_config` module block.
+and it will output
+- a `project` definition configuration which can be added to your `openstack_config` module block.
+- a set of import blocks which could e.g. be added to import.tf
 
 
-TODO: explain idempotency of import blocks.
+TODO: explain idempotency of import blocks and how to use
 

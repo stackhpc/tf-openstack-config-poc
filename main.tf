@@ -7,6 +7,7 @@ variable "small_quota" {
     floating_ips = 3
     routers      = 3
     ports        = 500
+    volumes = 10
   }
 }
 
