@@ -4,9 +4,9 @@ Proof of concept for an OpenTofu-based replacement for the Ansible [openstack-co
 
 This contains:
 
-- `modules/openstack`: An OpenTofu module to manage OpenStack projects and related
-  configuration. A module instantiation may define multiple projects within a
-  single domain.
+- `modules/openstack_config`: An OpenTofu module to manage OpenStack config.
+  A single module instantiation may define multiple resources within a single
+  domain.
 - `main.tf`: An example of using that module to define two projects, with
   relevant groups and role assignments. An existing Keystone user is used to
   "fake" a federated user. The example also demonstrates how OpenTofu variables
@@ -100,7 +100,7 @@ Also not idempotent:
 
 Hit this:
 ```
- Error: Error unassigning openstack_identity_role_assignment_v3 /ae96a9616a654075ba50a1e3daaef19f/7aef976453af48078d1740fa5542c974//0c7cb73501e740b995b660dc1b7d53fa: Successfully re-authenticated, but got error executing request: Expected HTTP response code [204] when accessing [DELETE https://arcus.staging.openstack.hpc.cam.ac.uk:5000/v3/projects/ae96a9616a654075ba50a1e3daaef19f/groups/7aef976453af48078d1740fa5542c974/roles/0c7cb73501e740b995b660dc1b7d53fa], but got 401 instead: {"error":{"code":401,"message":"The request you have made requires authentication.","title":"Unauthorized"}}
+ Error: Error unassigning openstack_identity_role_assignment_v3 ...: Successfully re-authenticated, but got error executing request: Expected HTTP response code [204] when accessing [DELETE ..., but got 401 instead: {"error":{"code":401,"message":"The request you have made requires authentication.","title":"Unauthorized"}}
  ```
 
 worked on 3rd attempt :-(

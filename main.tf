@@ -1,4 +1,4 @@
-variable "arcus_small_quota" {
+variable "small_quota" {
   type = any
   default = {
     instances    = 20
@@ -11,7 +11,7 @@ variable "arcus_small_quota" {
 }
 
 module "openstack" {
-  source = "./modules/openstack"
+  source = "./modules/openstack_config"
 
   # TODO: domain
   # TODO: add ci/cd - PR tofu fmt, plan/approval (on merge) (don't run external PRs)
@@ -19,11 +19,11 @@ module "openstack" {
     sb-test-1 = {
       description = "Project One"
       # project_domain/user_domain? TF only has domain_id and is_domain
-      quotas = var.arcus_small_quota
+      quotas = var.small_quota
     },
     sb-test-2 = {
       description = "Project Two"
-      quotas      = var.arcus_small_quota
+      quotas      = var.small_quota
     }
   }
   groups = {
@@ -75,6 +75,6 @@ resource "openstack_identity_user_membership_v3" "steveb_B" {
 }
 # -- end of faked stuff --
 
-output "debug" {
-  value = module.openstack.debug
-}
+# output "debug" {
+#   value = module.openstack.debug
+# }
