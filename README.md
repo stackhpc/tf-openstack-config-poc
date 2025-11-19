@@ -107,3 +107,25 @@ worked on 3rd attempt :-(
 
 I can't fix this with depends_on, I think this is a genuine bug?
 
+## Migrating to OpenTofu configuration
+
+OpenTofu can import existing resources into state. This requires:
+- Configuration for the resources to import, i.e. an `openstack_config` module
+  block defining the relevant projects etc
+- [Import blocks](https://opentofu.org/docs/language/import/) defining which
+  cloud resources map to which state resources.
+
+This repo includes a tool which can help generate both of these. This is very
+much WIP. Currently it only supports projects and configuration. It can be run
+using:
+
+```shell
+python -m migrate project $PROJECT_NAME
+```
+
+and it will output a `project` definition configuration which can be added to
+your `openstack_config` module block.
+
+
+TODO: explain idempotency of import blocks.
+
