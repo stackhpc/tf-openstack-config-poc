@@ -54,7 +54,7 @@ Note this is not currentky complete either in breadth or depth!
   - YES: quotas
 - NO: openstack_routers
 - NO: openstack_security_groups
-- TODO: openstack_networks_rbac
+- YES: openstack_networks_rbac
 - TODO: openstack_flavors
     - will provide flavor RBAC instead
 - NO: openstack_host_aggregates
@@ -104,3 +104,6 @@ Hit this:
  ```
 
 worked on 3rd attempt :-(
+
+I can't fix this with depends_on, I think this is a genuine bug?
+

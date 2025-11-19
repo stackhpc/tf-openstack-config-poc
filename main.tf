@@ -46,16 +46,17 @@ module "openstack" {
 
   # TODO: users
 
+  network_rbac = [
+    {
+      network = "storage-net"
+      projects = ["sb-test-2"]
+      access = "access_as_external"
+    },
+  ]
+
   # TODO: flavor_rbac
   # agreed to keep separate from network, as for ansible
-  # e.g.
-  # network_rbac = [
-  #   {
-  #     network = "CUDN-Internet"
-  #     projects = ["sb-test-1", "sb-test-2"]
-  #     action = "access_as_external"
-  #   },
-  # ]
+
 }
 
 # -- faked stuff, will be done by federation --
