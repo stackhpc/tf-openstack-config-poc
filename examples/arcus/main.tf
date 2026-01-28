@@ -11,7 +11,7 @@ variable "small_quota" {
 }
 
 module "openstack" {
-  source = "./modules/openstack_config"
+  source = "../../modules/openstack_config"
 
   # TODO: domain
   # TODO: add ci/cd - PR tofu fmt, plan/approval (on merge) (don't run external PRs)
@@ -44,21 +44,6 @@ module "openstack" {
     }
   ]
 
-  users = {
-    user1 = {
-       description = "User 1"
-       email = "user1@example.com"
-       groups = [ "GroupA" ]
-       password = "super-secret-password"
-    },
-    user2 = {
-       description = "User 2"
-       email = "user2@example.com"
-       groups = [ "GroupA", "GroupB" ]
-       password = "super-secret-password"
-    }
-  }
-
   network_rbac = [
     {
       network = "storage-net"
@@ -72,3 +57,22 @@ module "openstack" {
 
 }
 
+# -- faked stuff, will be done by federation
+data "openstack_identity_user_v3" "steveb" {
+  name = "steveb_stack"
+}
+
+resource "openstack_identity_user_membership_v3" "steveb_A" {
+  user_id  = data.openstack_identity_user_v3.steveb.id
+  group_id = module.openstack.groups["GroupA"].id
+}
+
+resource "openstack_identity_user_membership_v3" "steveb_B" {
+  user_id  = data.openstack_identity_user_v3.steveb.id
+  group_id = module.openstack.groups["GroupB"].id
+}
+# -- end of faked stuff --
+
+# output "debug" {
+#   value = module.openstack.debug
+# }

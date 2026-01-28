@@ -7,11 +7,11 @@ This contains:
 - `modules/openstack_config`: An OpenTofu module to manage OpenStack config.
   A single module instantiation may define multiple resources within a single
   domain.
-- `main.tf`: An example of using that module to define two projects, with
-  relevant groups and role assignments. An existing Keystone user is used to
-  "fake" a federated user. The example also demonstrates how OpenTofu variables
-  can be used similarly to indirection in Ansible to define the same quotas once
-  for multiple projects.
+- `examples/`: Examples of using the module. The `arcus/main.tf` example
+  demonstrates two projects, with relevant groups and role assignments. An
+  existing Keystone user is used to "fake" a federated user. The example also
+  demonstrates how OpenTofu variables can be used similarly to indirection in
+  Ansible to define the same quotas once for multiple projects.
 
 This is not production-ready and does not contain any variable typing/checks or
 docs.
@@ -21,6 +21,7 @@ docs.
 With a `clouds.yaml` and `OS_CLOUD`/`OS_CLIENT_CONFIG_FILE` set as necessary run
 
 ```shell
+cd examples/EXAMPLE # select an example
 tofu init
 tofu apply
 ```
@@ -49,7 +50,7 @@ Note this is not currentky complete either in breadth or depth!
   - YES: description
   - TODO: project_domain
   - TODO: user_domain
-  - NO: users
+  - YES: users - **WARNING: passwords will be stored in state!**
   - NO: keypairs
   - YES: quotas
 - NO: openstack_routers
@@ -107,3 +108,6 @@ worked on 3rd attempt :-(
 
 I can't fix this with depends_on, I think this is a genuine bug?
 
+## TODO
+- Fix resources using lists
+- Fix user passwords ending up in state?
