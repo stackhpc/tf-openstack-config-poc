@@ -9,8 +9,8 @@ variable "groups" {
 }
 
 variable "users" {
-    type = map(string)
-    default = {}
+    type = any
+    default = []
 }
 
 variable "role_assignments" {
