@@ -1,12 +1,26 @@
-variable "small_quota" {
+variable "small_compute_quota" {
   type = any
   default = {
     instances    = 20
     cores        = 200
     ram          = 512000 # 500GB
+  }
+}
+
+variable "small_network_quota" {
+  type = any
+  default = {
     floating_ips = 3
     routers      = 3
     ports        = 500
+  }
+}
+
+variable "small_blockstorage_quota" {
+  type = any
+  default = {
+    volumes = 10
+    gigabytes = 10
   }
 }
 
@@ -19,11 +33,15 @@ module "openstack" {
     sb-test-1 = {
       description = "Project One"
       # project_domain/user_domain? TF only has domain_id and is_domain
-      quotas = var.small_quota
+      compute_quotas = var.small_compute_quota
+      network_quotas = var.small_network_quota
+      blockstorage_quota = var.small_blockstorage_quota
     },
     sb-test-2 = {
       description = "Project Two"
-      quotas      = var.small_quota
+      compute_quotas = var.small_compute_quota
+      network_quotas = var.small_network_quota
+      #blockstorage_quota = var.small_blockstorage_quota
     }
   }
   groups = {
