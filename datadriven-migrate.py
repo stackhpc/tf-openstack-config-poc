@@ -21,19 +21,48 @@ project = {
         }
 }
 
+def walk(obj, args=None, method='__call__'):
+    """
+    Walk obj (non-recursively, calling the specified method passing args on each OSCmd objects.
+    Results replace OSCmd objects.
 
+    Note: This modifies the original structure!
 
-def call(cmd):
-    cmd_list = ["openstack"] + cmd.split() + ["-f", "json"]
-    print(cmd_list)
-    p = subprocess.run(cmd_list, text=True, capture_output=True)
-    # todo: error handling!
-    return json.loads(p.stdout)
+    Args:
+        obj: The data structure to walk
+        args: Dict of arguments to the method, splatted in
+        method: name of OSCmd method to call.
+    """
+    queue = [obj]
+    visited = set()
+    args = {} if args is None else args
+    
+    while queue:
+        current = queue.pop(0)
+
+        if id(current) in visited:
+            continue
+        visited.add(id(current))
+
+        if isinstance(current, dict):
+            for key, value in list(current.items()):
+                if isinstance(value, OSCmd):
+                    current[key] = getattr(value, method)(**args)
+                elif isinstance(value, (dict, list)):
+                    queue.append(value)
+
+        elif isinstance(current, list):
+            for i, value in enumerate(current):
+                if isinstance(value, OSCmd):
+                    current[i] = getattr(value, method)(**args)
+                elif isinstance(value, (dict, list)):
+                    queue.append(value)
+    
+    return obj
+
 
 if __name__ == "__main__":
     project_name = sys.argv[1]
 
-    for tmpl in [project['description'], project['quotas']['compute']]:
-    
-        data = tmpl(project_name=project_name)
-        pprint.pprint(data)
+    walk(project, {'project_name': project_name})
+    pprint.pprint(project)
