@@ -109,5 +109,4 @@ worked on 3rd attempt :-(
 I can't fix this with depends_on, I think this is a genuine bug?
 
 ## TODO
-- Fix resources using lists
 - Fix user passwords ending up in state?

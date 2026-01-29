@@ -16,6 +16,7 @@ variable "users" {
 variable "role_assignments" {
     type = any # TODO: tighten up?
     default = []
+    description = "Note an error will occur if these are not unique"
 }
 
 variable "network_rbac" {

@@ -29,6 +29,7 @@ module "openstack" {
   groups = {
     GroupA = "Group A"
     GroupB = "Group B"
+    GroupC = "Group C"
   }
 
   role_assignments = [
@@ -37,6 +38,12 @@ module "openstack" {
       group   = "GroupA"
       project = "sb-test-1"
     },
+    # uncomment and apply to demonstrate stability:
+    # {
+    #   role = "member"
+    #   group = "GroupC"
+    #   project = "sb-test-1"
+    # },
     {
       role    = "reader"
       group   = "GroupB"
