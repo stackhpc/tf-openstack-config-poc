@@ -22,18 +22,18 @@ locals {
 resource "openstack_blockstorage_quotaset_v3" "project" {
   # Skip projects where quotas has no blockstorage keys, else fails with
   # {"code": 400, "message": "Invalid input for field/attribute quota_set. Value: {}. {} does not have enough properties"}
-  for_each = {for name, proj in var.projects: name => proj if length(setintersection(keys(proj.quotas) , local.blockstorage_params)) > 0}
+  for_each = {for name, proj in var.projects: name => proj if contains(keys(proj), "blockstorage_quota")}
   
   project_id = openstack_identity_project_v3.project[each.key].id
   # so need to set these to null if not required
-  volumes              = lookup(each.value.quotas, "volumes", null)
-  snapshots            = lookup(each.value.quotas, "snapshots", null)
-  gigabytes            = lookup(each.value.quotas, "gigabytes", null)
-  per_volume_gigabytes = lookup(each.value.quotas, "per_volume_gigabytes", null)
-  backups              = lookup(each.value.quotas, "backups", null)
-  backup_gigabytes     = lookup(each.value.quotas, "backup_gigabytes", null)
-  groups               = lookup(each.value.quotas, "groups", null)
-  volume_type_quota    = lookup(each.value.quotas, "volume_type_quota", null)
+  volumes              = lookup(each.value.blockstorage_quota, "volumes", null)
+  snapshots            = lookup(each.value.blockstorage_quota, "snapshots", null)
+  gigabytes            = lookup(each.value.blockstorage_quota, "gigabytes", null)
+  per_volume_gigabytes = lookup(each.value.blockstorage_quota, "per_volume_gigabytes", null)
+  backups              = lookup(each.value.blockstorage_quota, "backups", null)
+  backup_gigabytes     = lookup(each.value.blockstorage_quota, "backup_gigabytes", null)
+  groups               = lookup(each.value.blockstorage_quota, "groups", null)
+  volume_type_quota    = lookup(each.value.blockstorage_quota, "volume_type_quota", null)
   # in above $TYPE is presumably result of `openstack volume type list -c Name`:
   #   volumes_$TYPE = 30
   #   gigabytes_$TYPE = 500
@@ -45,27 +45,27 @@ resource "openstack_compute_quotaset_v2" "project" {
   for_each = var.projects
 
   project_id           = openstack_identity_project_v3.project[each.key].id
-  key_pairs            = lookup(each.value.quotas, "key_pairs", null)
-  ram                  = lookup(each.value.quotas, "ram", null)
-  cores                = lookup(each.value.quotas, "cores", null)
-  instances            = lookup(each.value.quotas, "instances", null)
-  server_groups        = lookup(each.value.quotas, "server_groups", null)
-  server_group_members = lookup(each.value.quotas, "server_group_members", null)
+  key_pairs            = lookup(each.value.compute_quotas, "key_pairs", null)
+  ram                  = lookup(each.value.compute_quotas, "ram", null)
+  cores                = lookup(each.value.compute_quotas, "cores", null)
+  instances            = lookup(each.value.compute_quotas, "instances", null)
+  server_groups        = lookup(each.value.compute_quotas, "server_groups", null)
+  server_group_members = lookup(each.value.compute_quotas, "server_group_members", null)
 }
 
 resource "openstack_networking_quota_v2" "project" {
   for_each = var.projects
 
   project_id          = openstack_identity_project_v3.project[each.key].id
-  floatingip          = lookup(each.value.quotas, "floatingip", null)
-  network             = lookup(each.value.quotas, "network", null)
-  port                = lookup(each.value.quotas, "port", null)
-  rbac_policy         = lookup(each.value.quotas, "rbac_policy", null)
-  router              = lookup(each.value.quotas, "router", null)
-  security_group      = lookup(each.value.quotas, "security_group", null)
-  security_group_rule = lookup(each.value.quotas, "security_group_rule", null)
-  subnet              = lookup(each.value.quotas, "subnet", null)
-  subnetpool          = lookup(each.value.quotas, "subnetpool", null)
+  floatingip          = lookup(each.value.network_quotas, "floatingip", null)
+  network             = lookup(each.value.network_quotas, "network", null)
+  port                = lookup(each.value.network_quotas, "port", null)
+  rbac_policy         = lookup(each.value.network_quotas, "rbac_policy", null)
+  router              = lookup(each.value.network_quotas, "router", null)
+  security_group      = lookup(each.value.network_quotas, "security_group", null)
+  security_group_rule = lookup(each.value.network_quotas, "security_group_rule", null)
+  subnet              = lookup(each.value.network_quotas, "subnet", null)
+  subnetpool          = lookup(each.value.network_quotas, "subnetpool", null)
 }
 
 # TODO: add network
