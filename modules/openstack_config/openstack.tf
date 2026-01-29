@@ -10,7 +10,7 @@ variable "groups" {
 
 variable "users" {
     type = any
-    default = []
+    default = {}
 }
 
 variable "role_assignments" {
