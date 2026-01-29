@@ -5,10 +5,10 @@ import sys, subprocess, json, pprint
 import to_tf
 
 class OSCmd:
-    def __init__(self, cmdstr, as_json=True):
+    def __init__(self, cmdstr, as_json=True, transform=None):
         self.cmdstr = cmdstr
         self.as_json = as_json
-        #self.value = None
+        self.transform = transform
     def __call__(self, **args):
         expanded_cmd = self.cmdstr.format(**args)
         cmd_list = ["openstack"] + expanded_cmd.split()
@@ -16,16 +16,25 @@ class OSCmd:
         print('calling', cmd_list)
         p = subprocess.run(cmd_list, text=True, capture_output=True)
         # todo: error handling!
-        return json.loads(p.stdout) if self.as_json else p.stdout.strip()
+        value = json.loads(p.stdout) if self.as_json else p.stdout.strip()
+        if self.transform:
+            value = self.transform(value)
+        return value
     
     # def __repr__(self):
     #     #return pprint.pformat(self.value)
     #     return pprint.pformat(self.to_tf)
 
+def items_to_dict(lst, key='Resource', value='Limit'):
+    d = {}
+    for o in lst:
+        d[o[key]] = o[value]
+    return d
+
 project = {
     "{project_name}": {
         "description": OSCmd("project show {project_name} -c description", as_json=False),
-        "compute_quotas": OSCmd("quota show --compute {project_name}")
+        "compute_quotas": OSCmd("quota show --compute {project_name}", transform=items_to_dict)
     }
 }
 
