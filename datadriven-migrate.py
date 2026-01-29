@@ -1,46 +1,31 @@
 #!/usr/bin/env python3
 
 import sys, subprocess, json, pprint
-
 import to_tf
-
-class OSCmd:
-    def __init__(self, cmdstr, as_json=True, transform=None):
-        self.cmdstr = cmdstr
-        self.as_json = as_json
-        self.transform = transform
-    def __call__(self, **args):
-        expanded_cmd = self.cmdstr.format(**args)
-        cmd_list = ["openstack"] + expanded_cmd.split()
-        cmd_list += ["-f", "json"] if self.as_json else ["-f", "value"]
-        print('calling', cmd_list)
-        p = subprocess.run(cmd_list, text=True, capture_output=True)
-        # todo: error handling!
-        value = json.loads(p.stdout) if self.as_json else p.stdout.strip()
-        if self.transform:
-            value = self.transform(value)
-        return value
-    
-    # def __repr__(self):
-    #     #return pprint.pformat(self.value)
-    #     return pprint.pformat(self.to_tf)
 
 IMPORT_TEMPLATE="""
 import {{
     to = {address}
-    id = {id}
+    id = {tofu_id}
 }}
 """
 
 class OSResource:
+
+    def eval(self):
+        p = subprocess.run(self.os_cmd.split(), text=True, capture_output=True)
+        self.values = json.loads(p.stdout) if self.as_json else p.stdout.strip()
+        if self.transform:
+            self.values = self.transform(self.values)
+
     def config(self):
-        d = dict((k, self.values[k]) for k in self.input_values)
+        d = dict((k, self.values[k]) for k in self.config_values)
         for k, v in self.children.items():
             d[k] = v.config()
         return d
     
     def import_block(self):
-        blocks = [IMPORT_TEMPLATE.format(address='madeup', id=self.id).strip()]
+        blocks = [IMPORT_TEMPLATE.format(address=self.address, tofu_id=self.tofu_id).strip()]
         for v in self.children.values():
             blocks.extend(v.import_block())
         return blocks
@@ -48,32 +33,35 @@ class OSResource:
 class Project(OSResource):
     def __init__(self, name):
         self.name = name
-        self.as_json = True
         self.os_cmd = f"openstack project show {self.name} --format json"
-        self.input_values = ['description']
+        self.as_json = True
         
         self.transform = None
-
-        p = subprocess.run(self.os_cmd.split(), text=True, capture_output=True)
-        self.values = json.loads(p.stdout) if self.as_json else p.stdout.strip()
+        self.eval()
+        self.config_values = ['description']
+        
         self.children = {
-            "compute_quota": ComputeQuota(self.values['id'])
+            "compute_quota": ComputeQuota(self.name, self.values['id'])
         }
-        self.id = self.values['id']
+
+        self.address = f'module.openstack.openstack_identity_project_v3.project["{self.name}"]'
+        self.tofu_id = self.values['id']
     
 class ComputeQuota(OSResource):
-    def __init__(self, project_id):
+    def __init__(self, project_name, project_id):
+        self.project_name = project_name
         self.project_id = project_id
+        self.os_cmd = f"openstack quota show --compute -f json {self.project_id}"
         self.as_json = True
-        self.children = {}
-        self.os_cmd = f"openstack quota show --compute -f json {self.project_id}" #, transform=items_to_dict),
-        p = subprocess.run(self.os_cmd.split(), text=True, capture_output=True)
-        self.values = json.loads(p.stdout) if self.as_json else p.stdout.strip()
+        
         self.transform = items_to_dict
-        if self.transform:
-            self.values = self.transform(self.values)
-        self.input_values = self.values.keys()
-        self.id = f"{self.project_id}/RegionOne"
+        self.eval()
+        self.children = {}
+        
+        self.config_values = self.values.keys()
+
+        self.address = f'module.openstack.openstack_compute_quotaset_v2.project["{self.project_name}"]'
+        self.tofu_id = f"{self.project_id}/RegionOne"
         
 
 def items_to_dict(lst, key='Resource', value='Limit'):
