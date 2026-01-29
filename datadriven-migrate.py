@@ -31,10 +31,13 @@ def items_to_dict(lst, key='Resource', value='Limit'):
         d[o[key]] = o[value]
     return d
 
-project = {
-    "{project_name}": {
-        "description": OSCmd("project show {project_name} -c description", as_json=False),
-        "compute_quotas": OSCmd("quota show --compute {project_name}", transform=items_to_dict)
+# TODO: this can't handle multiple projects ...
+project={
+    'projects': {
+        "{project_name}": {
+            "description": OSCmd("project show {project_name} -c description", as_json=False),
+            "compute_quotas": OSCmd("quota show --compute {project_name}", transform=items_to_dict)
+        }
     }
 }
 
@@ -91,8 +94,12 @@ if __name__ == "__main__":
 
     walk(project, {'project_name': project_name})
     #walk(project, {'project_name': project_name}, method='to_tf')
+    print('data:')
     pprint.pprint(project)
-
     print('--')
+    print('config:')
     tf = to_tf.to_tf(project)
     print(tf)
+    print('---')
+    print('import blocks:')
+    print('TODO')
