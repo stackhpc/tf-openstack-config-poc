@@ -3,8 +3,9 @@
 
 INDENT_STEP = 2
 
-def to_tf(obj):
-    queue = [(obj, 0, None)]  # (object, indent_level, key_name)
+def to_tf(obj, indent=0):
+    indent_start=indent
+    queue = [(obj, indent_start, None)]  # (object, indent_level, key_name)
     lines = []
     
     while queue:
@@ -14,29 +15,31 @@ def to_tf(obj):
         if isinstance(current, dict):
             if key is not None:
                 lines.append(f"{prefix}{key} = {{")
-            else:
-                lines.append(f"{prefix}{{")
-            
+            # else:
+            #     lines.append(f"{prefix}{{")
+        
             # Add dict items to queue in reverse order so they process in correct order
             items = list(current.items())
             for k, v in reversed(items):
                 queue.insert(0, (v, indent + INDENT_STEP, k))
             
             # Add closing brace (will be added after all nested items are processed)
-            queue.insert(len(items), ('}', indent, None))
+            if key is not None:
+                queue.insert(len(items), ('}', indent, None))
         
         elif isinstance(current, list):
             if key is not None:
                 lines.append(f"{prefix}{key} = [")
-            else:
-                lines.append(f"{prefix}[")
+            # else:
+            #     lines.append(f"{prefix}[")
             
             # Add list items to queue in reverse order
             for item in reversed(current):
                 queue.insert(0, (item, indent + INDENT_STEP, None))
             
             # Add closing bracket
-            queue.insert(len(current), (']', indent, None))
+            if key is not None:
+                queue.insert(len(current), (']', indent, None))
         
         elif isinstance(current, str):
             if current in ['}', ']']:
