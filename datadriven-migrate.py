@@ -2,11 +2,13 @@
 
 import sys, subprocess, json, pprint
 
+import to_tf
+
 class OSCmd:
     def __init__(self, cmdstr, as_json=True):
         self.cmdstr = cmdstr
         self.as_json = as_json
-        self.value = None
+        #self.value = None
     def __call__(self, **args):
         expanded_cmd = self.cmdstr.format(**args)
         cmd_list = ["openstack"] + expanded_cmd.split()
@@ -14,10 +16,11 @@ class OSCmd:
         print('calling', cmd_list)
         p = subprocess.run(cmd_list, text=True, capture_output=True)
         # todo: error handling!
-        self.value = json.loads(p.stdout) if self.as_json else p.stdout.strip()
-
-    def __repr__(self):
-        return pprint.pformat(self.value)
+        return json.loads(p.stdout) if self.as_json else p.stdout.strip()
+    
+    # def __repr__(self):
+    #     #return pprint.pformat(self.value)
+    #     return pprint.pformat(self.to_tf)
 
 project = {
     "{project_name}": {
@@ -54,10 +57,11 @@ def walk(obj, args=None, method='__call__'):
             for key, value in list(current.items()):
                 fmt_key = key.format(**args)
                 if fmt_key != key:
-                    del current[key]
                     current[fmt_key] = value
+                    del current[key]
+                    key = fmt_key
                 if isinstance(value, OSCmd):
-                    getattr(value, method)(**args)
+                    current[key] = getattr(value, method)(**args)
                 elif isinstance(value, (dict, list)):
                     queue.append(value)
 
@@ -65,7 +69,7 @@ def walk(obj, args=None, method='__call__'):
             print('processing list')
             for i, value in enumerate(current):
                 if isinstance(value, OSCmd):
-                    getattr(value, method)(**args)
+                    current[i] = getattr(value, method)(**args)
                 elif isinstance(value, (dict, list)):
                     queue.append(value)
         else:
@@ -77,4 +81,9 @@ if __name__ == "__main__":
     project_name = sys.argv[1]
 
     walk(project, {'project_name': project_name})
+    #walk(project, {'project_name': project_name}, method='to_tf')
     pprint.pprint(project)
+
+    print('--')
+    tf = to_tf.to_tf(project)
+    print(tf)

@@ -4,38 +4,56 @@
 INDENT_STEP = 2
 
 def to_tf(obj):
-    queue = [obj]
-    head = ['']
-    tail = []
-    indent = 0
+    queue = [(obj, 0, None)]  # (object, indent_level, key_name)
+    lines = []
+    
     while queue:
-        current = queue.pop(0)
-        print('DEBUG:', current)
+        current, indent, key = queue.pop(0)
+        prefix = ' ' * indent
+        
         if isinstance(current, dict):
-            head[-1] += '{'
-            indent += INDENT_STEP
-            tail.append(f"{' ' * (indent - INDENT_STEP)}}}")
-            for k, v in current.items():
-                if isinstance(v, dict):
-                    head.append(f"{' ' * indent}{k} = ")
-                    queue.append(v)
-                elif isinstance(v, str):
-                    head.append(' ' * indent + f'{k} = "{v}"')
-                elif isinstance(v, int):
-                    head.append(' ' * indent + f'{k} = {v}')
-                elif isinstance(v, list):
-                    queue.append(v)
-                elif v is None:
-                    head.append(' ' * indent + f'{k} = null')
-                else:
-                    raise NotImplementedError(v)
+            if key is not None:
+                lines.append(f"{prefix}{key} = {{")
+            else:
+                lines.append(f"{prefix}{{")
+            
+            # Add dict items to queue in reverse order so they process in correct order
+            items = list(current.items())
+            for k, v in reversed(items):
+                queue.insert(0, (v, indent + INDENT_STEP, k))
+            
+            # Add closing brace (will be added after all nested items are processed)
+            queue.insert(len(items), ('}', indent, None))
+        
         elif isinstance(current, list):
-            head.append(f"{' ' * indent}[")
-            indent += INDENT_STEP
-            tail.append(f"{' ' * (indent - INDENT_STEP)}]")
-            for e in current:
-                queue.append(e)
-    return '\n'.join(head + list(reversed(tail)))
+            if key is not None:
+                lines.append(f"{prefix}{key} = [")
+            else:
+                lines.append(f"{prefix}[")
+            
+            # Add list items to queue in reverse order
+            for item in reversed(current):
+                queue.insert(0, (item, indent + INDENT_STEP, None))
+            
+            # Add closing bracket
+            queue.insert(len(current), (']', indent, None))
+        
+        elif isinstance(current, str):
+            if current in ['}', ']']:
+                lines.append(f"{prefix}{current}")
+            else:
+                lines.append(f'{prefix}{key} = "{current}"')
+        
+        elif isinstance(current, int):
+            lines.append(f'{prefix}{key} = {current}')
+        
+        elif current is None:
+            lines.append(f'{prefix}{key} = null')
+        
+        else:
+            raise NotImplementedError(f"Type {type(current)} not supported")
+    
+    return '\n'.join(lines)
 
 
 
@@ -44,14 +62,10 @@ if __name__ == '__main__':
     TEST1 = {
         "sb-test-1": {
             "description":"Project One",
-            "quotas": {
-                "instances": 20,
-                "cores": 200,
-                "ram": 512000,
-                "floating_ips": 3,
-                "routers": 3,
-                "ports": 500,
-            }
+            "quotas": [
+                {'Limit': 20, 'Resource':"instances"},
+                {'Limit': 200, 'Resource':"cores"},
+            ]
         }
     }
 
@@ -70,5 +84,5 @@ if __name__ == '__main__':
             }
         ]
     }
-    print(to_tf(TEST1))
+    print(to_tf(TEST2))
 
