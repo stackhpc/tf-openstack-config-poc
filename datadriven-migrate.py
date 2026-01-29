@@ -48,7 +48,7 @@ class Project(OSResource):
         self.os_cmd = f"openstack project show {self.name} --format json"
         self.eval()
         self.children = {
-            "compute_quota": ComputeQuota(self.name, self.values['id'])
+            "compute_quotas": ComputeQuota(self.name, self.values['id'])
         }
         self.address = f'module.openstack.openstack_identity_project_v3.project["{self.name}"]'
         self.tofu_id = self.values['id']
