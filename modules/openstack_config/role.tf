@@ -1,5 +1,5 @@
 
-data  "openstack_identity_role_v3" "role" {
+data "openstack_identity_role_v3" "role" {
   for_each = toset([for v in var.role_assignments: v.role])
   name = each.value
 }
