@@ -33,7 +33,8 @@ def to_tf(obj):
             
             # Add closing brace (will be added after all nested items are processed)
             if not is_top:
-                queue.insert(len(items), ('}', indent, None))
+                closing = '},' if key is None else '}'  # Add comma if this dict is a list item
+                queue.insert(len(items), (closing, indent, None))
         
         elif isinstance(current, list):
             if key is not None:
@@ -47,10 +48,11 @@ def to_tf(obj):
             
             # Add closing bracket
             if not is_top:
-                queue.insert(len(current), (']', indent, None))
+                closing = '],' if key is None else ']'  # Add comma if this list is a list item
+                queue.insert(len(current), (closing, indent, None))
         
         elif isinstance(current, str):
-            if current in ['}', ']']:
+            if current in ['}', '],', '},', ']']:
                 lines.append(f"{prefix}{current}")
             elif key is None:  # List item
                 lines.append(f'{prefix}"{current}",')
@@ -121,6 +123,22 @@ if __name__ == '__main__':
                 "id":"d4ce6ac2-fdc6-11f0-b7cd-bbf3b0de9759"
             }
         }
+    }
+
+    TEST6 = {
+        "x":[
+            {"foo":"0"},
+            {"bar":"1"},
+        ]
+    }
+
+    TEST7 = {
+        "foo": [
+            "a",
+            [0, 1, 2], 
+            "b",
+            "c"
+        ]
     }
 
     test = sys.argv[1]
