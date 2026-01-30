@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, subprocess, json, pprint, argparse, os
+import subprocess, json, pprint, argparse, os
 import hcl
 
 IMPORT_TEMPLATE="""
@@ -127,10 +127,10 @@ class Group(OSResource):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', default='main.tf')
-    parser.add_argument('--imports', default='imports.tf')
-    parser.add_argument('--projects', default=None)
-    parser.add_argument('--groups', default=None)
+    parser.add_argument('--config', default='main.tf', help="path for created file containing OpenTofu configuration (default: main.tf)")
+    parser.add_argument('--imports', default='imports.tf', help="path for created file containing import blocks (default: imports.tf)")
+    parser.add_argument('--projects', default=None, help="comma-separated list of projects to import (default: all)")
+    parser.add_argument('--groups', default=None, help="comma-separated list of groups to import (default: all)")
     args = parser.parse_args()
 
     # TODO: could tidy this up!
