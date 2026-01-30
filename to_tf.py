@@ -9,6 +9,7 @@ def to_tf(obj):
     # - a string (dict value)
     # - None (everything else: top-level, list items, and structural markers)
     lines = []
+    is_top = True
     
     while queue:
         current, indent, key = queue.pop(0)
@@ -22,30 +23,30 @@ def to_tf(obj):
                     lines.append(f"{prefix}{block_type} {' '.join(block_labels)} {{")
                 else:
                     lines.append(f"{prefix}{key} = {{")
-            elif indent > 0:
+            elif not is_top:
                 lines.append(f"{prefix}{{")
 
             # Add dict items to queue in reverse order so they process in correct order
             items = list(current.items())
             for k, v in reversed(items):
-                queue.insert(0, (v, indent + INDENT_STEP, k))
+                queue.insert(0, (v, indent + INDENT_STEP if not is_top else indent, k))
             
             # Add closing brace (will be added after all nested items are processed)
-            if indent > 0:
+            if not is_top:
                 queue.insert(len(items), ('}', indent, None))
         
         elif isinstance(current, list):
             if key is not None:
                 lines.append(f"{prefix}{key} = [")
-            elif indent > 0:
+            elif not is_top:
                lines.append(f"{prefix}[")
             
             # Add list items to queue in reverse order
             for item in reversed(current):
-                queue.insert(0, (item, indent + INDENT_STEP, None))
+                queue.insert(0, (item, indent + INDENT_STEP if not is_top else indent, None))
             
             # Add closing bracket
-            if key is not None:
+            if not is_top:
                 queue.insert(len(current), (']', indent, None))
         
         elif isinstance(current, str):
@@ -71,6 +72,8 @@ def to_tf(obj):
         
         else:
             raise NotImplementedError(f"Type {type(current)} not supported")
+
+        is_top = False  # After first iteration, we're never at top level again
     
     return '\n'.join(lines)
 
