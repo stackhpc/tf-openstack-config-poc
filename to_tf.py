@@ -3,6 +3,10 @@
 
 INDENT_STEP = 2
 
+class Newline:
+    pass
+NEWLINE = Newline()
+
 def to_tf(obj):
     queue = [(obj, 0, None)]  # (current object, indent, key)
     # key is either:
@@ -33,9 +37,14 @@ def to_tf(obj):
             
             # Add closing brace (will be added after all nested items are processed)
             if not is_top:
-                closing = '},' if key is None else '}'  # Add comma if this dict is a list item
-                queue.insert(len(items), (closing, indent, None))
-        
+                if isinstance(key, tuple) and indent == 0: # Add newline
+                    queue.insert(len(items), ('}', indent, None))
+                    queue.insert(len(items) + 1, (NEWLINE, indent, None))    
+                elif key is None: # # Add comma if this dict is a list item
+                    queue.insert(len(items), ('},', indent, None))
+                else:
+                    queue.insert(len(items), ('}', indent, None))
+                    closing = '}'
         elif isinstance(current, list):
             if key is not None:
                 lines.append(f"{prefix}{key} = [")
@@ -71,6 +80,9 @@ def to_tf(obj):
                 lines.append(f'{prefix}null,')
             else:  # Dict value
                 lines.append(f'{prefix}{key} = null')
+        
+        elif current == NEWLINE:
+            lines.append('')
         
         else:
             raise NotImplementedError(f"Type {type(current)} not supported")
@@ -117,10 +129,16 @@ if __name__ == '__main__':
     }
 
     TEST5 = {
-        ("resource", "aws_instance", "example"):{
+        ("resource", "aws_instance", "foo"):{
             "ami": "abc123",
             ("network_interface",): {
-                "id":"d4ce6ac2-fdc6-11f0-b7cd-bbf3b0de9759"
+                "id":"uuid_1"
+            }
+        },
+        ("resource", "aws_instance", "bar"):{
+            "ami": "abc123",
+            ("network_interface",): {
+                "id":"uuid_2"
             }
         }
     }
