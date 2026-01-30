@@ -3,9 +3,11 @@
 
 INDENT_STEP = 2
 
-def to_tf(obj, indent=0):
-    indent_start=indent
-    queue = [(obj, indent_start, None)]  # (object, indent_level, key_name)
+def to_tf(obj):
+    queue = [(obj, 0, None)]  # (current object, indent, key)
+    # key is either:
+    # - a string (dict value)
+    # - None (everything else: top-level, list items, and structural markers)
     lines = []
     
     while queue:
@@ -14,24 +16,29 @@ def to_tf(obj, indent=0):
         
         if isinstance(current, dict):
             if key is not None:
-                lines.append(f"{prefix}{key} = {{")
-            # else:
-            #     lines.append(f"{prefix}{{")
-        
+                if isinstance(key, tuple): # block
+                    block_type = key[0]
+                    block_labels = [f'"{k}"' for k in key[1:]]
+                    lines.append(f"{prefix}{block_type} {' '.join(block_labels)} {{")
+                else:
+                    lines.append(f"{prefix}{key} = {{")
+            elif indent > 0:
+                lines.append(f"{prefix}{{")
+
             # Add dict items to queue in reverse order so they process in correct order
             items = list(current.items())
             for k, v in reversed(items):
                 queue.insert(0, (v, indent + INDENT_STEP, k))
             
             # Add closing brace (will be added after all nested items are processed)
-            if key is not None:
+            if indent > 0:
                 queue.insert(len(items), ('}', indent, None))
         
         elif isinstance(current, list):
             if key is not None:
                 lines.append(f"{prefix}{key} = [")
-            # else:
-            #     lines.append(f"{prefix}[")
+            elif indent > 0:
+               lines.append(f"{prefix}[")
             
             # Add list items to queue in reverse order
             for item in reversed(current):
@@ -44,14 +51,23 @@ def to_tf(obj, indent=0):
         elif isinstance(current, str):
             if current in ['}', ']']:
                 lines.append(f"{prefix}{current}")
-            else:
+            elif key is None:  # List item
+                lines.append(f'{prefix}"{current}",')
+            else:  # Dict value
                 lines.append(f'{prefix}{key} = "{current}"')
         
         elif isinstance(current, int):
-            lines.append(f'{prefix}{key} = {current}')
+            if key is None:  # List item
+                lines.append(f'{prefix}{current},')
+            else:  # Dict value
+                lines.append(f'{prefix}{key} = {current}')
         
+        # TODO: maybe get rid of this so we don't define null values for brevity?
         elif current is None:
-            lines.append(f'{prefix}{key} = null')
+            if key is None:  # List item
+                lines.append(f'{prefix}null,')
+            else:  # Dict value
+                lines.append(f'{prefix}{key} = null')
         
         else:
             raise NotImplementedError(f"Type {type(current)} not supported")
@@ -62,6 +78,7 @@ def to_tf(obj, indent=0):
 
 if __name__ == '__main__':
 
+    import sys
     TEST1 = {
         "sb-test-1": {
             "description":"Project One",
@@ -72,7 +89,6 @@ if __name__ == '__main__':
         }
     }
 
-    #print(to_tf(TEST1))
     TEST2 = {
         "role_assignments": [
             {
@@ -87,5 +103,23 @@ if __name__ == '__main__':
             }
         ]
     }
-    print(to_tf(TEST2))
+
+    TEST3 = [
+        "a", "b","c"
+    ]
+    TEST4 = {
+        "foo": ["a", "b", "c"]
+    }
+
+    TEST5 = {
+        ("resource", "aws_instance", "example"):{
+            "ami": "abc123",
+            ("network_interface",): {
+                "id":"d4ce6ac2-fdc6-11f0-b7cd-bbf3b0de9759"
+            }
+        }
+    }
+
+    test = sys.argv[1]
+    print(to_tf(locals()[test]))
 
