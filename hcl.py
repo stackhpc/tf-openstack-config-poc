@@ -7,7 +7,7 @@ class Newline:
     pass
 NEWLINE = Newline()
 
-def to_tf(obj):
+def to_hcl(obj):
     queue = [(obj, 0, None)]  # (current object, indent, key)
     # key is either:
     # - a string (dict value)

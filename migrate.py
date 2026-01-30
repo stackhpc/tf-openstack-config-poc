@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys, subprocess, json, pprint, argparse, os
-import to_tf
+import hcl
 
 IMPORT_TEMPLATE="""
 import {{
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     }
 
     # convert to hcl
-    config_hcl=to_tf.to_tf(config_py)
+    config_hcl=hcl.to_hcl(config_py)
 
     with open(args.config, 'w') as config_file:
         config_file.write(config_hcl)
