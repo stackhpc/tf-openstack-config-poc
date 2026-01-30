@@ -33,15 +33,15 @@ module "openstack" {
     sb-test-1 = {
       description = "Project One"
       # project_domain/user_domain? TF only has domain_id and is_domain
-      compute_quotas = var.small_compute_quota
-      network_quotas = var.small_network_quota
+      compute_quota = var.small_compute_quota
+      network_quota = var.small_network_quota
       blockstorage_quota = var.small_blockstorage_quota
     },
     sb-test-2 = {
       description = "Project Two"
-      compute_quotas = var.small_compute_quota
-      network_quotas = var.small_network_quota
-      #blockstorage_quota = var.small_blockstorage_quota
+      compute_quota = var.small_compute_quota
+      network_quota = var.small_network_quota
+      blockstorage_quota = var.small_blockstorage_quota
     }
   }
   groups = {
@@ -81,23 +81,3 @@ module "openstack" {
   # agreed to keep separate from network, as for ansible
 
 }
-
-# -- faked stuff, will be done by federation
-data "openstack_identity_user_v3" "steveb" {
-  name = "steveb_stack"
-}
-
-resource "openstack_identity_user_membership_v3" "steveb_A" {
-  user_id  = data.openstack_identity_user_v3.steveb.id
-  group_id = module.openstack.groups["GroupA"].id
-}
-
-resource "openstack_identity_user_membership_v3" "steveb_B" {
-  user_id  = data.openstack_identity_user_v3.steveb.id
-  group_id = module.openstack.groups["GroupB"].id
-}
-# -- end of faked stuff --
-
-# output "debug" {
-#   value = module.openstack.debug
-# }

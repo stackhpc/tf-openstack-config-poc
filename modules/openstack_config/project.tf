@@ -42,30 +42,30 @@ resource "openstack_blockstorage_quotaset_v3" "project" {
 }
 
 resource "openstack_compute_quotaset_v2" "project" {
-  for_each = var.projects
+  for_each = {for name, proj in var.projects: name => proj if contains(keys(proj), "compute_quota")}
 
   project_id           = openstack_identity_project_v3.project[each.key].id
-  key_pairs            = lookup(each.value.compute_quotas, "key_pairs", null)
-  ram                  = lookup(each.value.compute_quotas, "ram", null)
-  cores                = lookup(each.value.compute_quotas, "cores", null)
-  instances            = lookup(each.value.compute_quotas, "instances", null)
-  server_groups        = lookup(each.value.compute_quotas, "server_groups", null)
-  server_group_members = lookup(each.value.compute_quotas, "server_group_members", null)
+  key_pairs            = lookup(each.value.compute_quota, "key_pairs", null)
+  ram                  = lookup(each.value.compute_quota, "ram", null)
+  cores                = lookup(each.value.compute_quota, "cores", null)
+  instances            = lookup(each.value.compute_quota, "instances", null)
+  server_groups        = lookup(each.value.compute_quota, "server_groups", null)
+  server_group_members = lookup(each.value.compute_quota, "server_group_members", null)
 }
 
 resource "openstack_networking_quota_v2" "project" {
-  for_each = var.projects
+  for_each = {for name, proj in var.projects: name => proj if contains(keys(proj), "network_quota")}
 
   project_id          = openstack_identity_project_v3.project[each.key].id
-  floatingip          = lookup(each.value.network_quotas, "floatingip", null)
-  network             = lookup(each.value.network_quotas, "network", null)
-  port                = lookup(each.value.network_quotas, "port", null)
-  rbac_policy         = lookup(each.value.network_quotas, "rbac_policy", null)
-  router              = lookup(each.value.network_quotas, "router", null)
-  security_group      = lookup(each.value.network_quotas, "security_group", null)
-  security_group_rule = lookup(each.value.network_quotas, "security_group_rule", null)
-  subnet              = lookup(each.value.network_quotas, "subnet", null)
-  subnetpool          = lookup(each.value.network_quotas, "subnetpool", null)
+  floatingip          = lookup(each.value.network_quota, "floatingip", null)
+  network             = lookup(each.value.network_quota, "network", null)
+  port                = lookup(each.value.network_quota, "port", null)
+  rbac_policy         = lookup(each.value.network_quota, "rbac_policy", null)
+  router              = lookup(each.value.network_quota, "router", null)
+  security_group      = lookup(each.value.network_quota, "security_group", null)
+  security_group_rule = lookup(each.value.network_quota, "security_group_rule", null)
+  subnet              = lookup(each.value.network_quota, "subnet", null)
+  subnetpool          = lookup(each.value.network_quota, "subnetpool", null)
 }
 
 # TODO: add network
