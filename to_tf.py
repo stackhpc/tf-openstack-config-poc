@@ -37,14 +37,16 @@ def to_tf(obj):
             
             # Add closing brace (will be added after all nested items are processed)
             if not is_top:
-                if isinstance(key, tuple) and indent == 0: # Add newline
-                    queue.insert(len(items), ('}', indent, None))
-                    queue.insert(len(items) + 1, (NEWLINE, indent, None))    
-                elif key is None: # # Add comma if this dict is a list item
-                    queue.insert(len(items), ('},', indent, None))
+                if key is None: # # Add comma if this dict is a list item
+                    closing = ['},'] #queue.insert(len(items), ('},', indent, None))
+                elif isinstance(key, tuple) and indent == 0: # Add newline between top-level blocks
+                    closing = ['}', NEWLINE]
+                    #queue.insert(len(items) + 1, (NEWLINE, indent, None))    
                 else:
-                    queue.insert(len(items), ('}', indent, None))
-                    closing = '}'
+                    closing = ['}']
+                for idx, c in enumerate(closing):
+                    queue.insert(len(items) + idx, (c, indent, None))
+                    
         elif isinstance(current, list):
             if key is not None:
                 lines.append(f"{prefix}{key} = [")
