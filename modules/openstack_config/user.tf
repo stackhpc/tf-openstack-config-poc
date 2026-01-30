@@ -14,7 +14,7 @@ resource "openstack_identity_user_v3" "user" {
 
     name = each.key
     description = each.value.description
-    password = each.value.password
+    password = lookup(each.value, "password", null)
     ignore_change_password_upon_first_use = false
     #default_project_id = openstack_identity_project_v3.project[each.value.default_project].id
     extra = {

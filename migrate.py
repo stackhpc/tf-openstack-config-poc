@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import subprocess, json, pprint, argparse, os
+import subprocess, json, pprint, argparse, os, itertools
 import hcl
 
 IMPORT_TEMPLATE="""
@@ -11,6 +11,9 @@ import {{
 """
 MODULE_SOURCE="../../modules/openstack_config"
 DEBUG=os.getenv('DEBUG', default=False)
+
+def flatten(lst):
+    return list(itertools.chain.from_iterable(lst))
 
 def items_to_dict(lst, key='Resource', value='Limit'):
     if not isinstance(lst, list):
@@ -124,6 +127,16 @@ class Group(OSResource):
     def config(self):
         return self.values['description']
 
+class User(OSResource):
+    def __init__(self, user_name):
+        self.user_name = user_name
+        self.os_cmd = f"openstack user show -f json {self.user_name}"
+        self.eval()
+        self.config_values = ['description', 'email'] # TODO: groups
+        self.address = f'module.openstack.openstack_identity_user_v3.user["{self.user_name}"]'
+        self.tofu_id = self.values['id']
+    
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -131,6 +144,7 @@ if __name__ == "__main__":
     parser.add_argument('--imports', default='imports.tf', help="path for created file containing import blocks (default: imports.tf)")
     parser.add_argument('--projects', default=None, help="comma-separated list of projects to import (default: all)")
     parser.add_argument('--groups', default=None, help="comma-separated list of groups to import (default: all)")
+    parser.add_argument('--users', default=None, help="comma-separated list of users to import (default: all)")
     args = parser.parse_args()
 
     # TODO: could tidy this up!
@@ -139,17 +153,23 @@ if __name__ == "__main__":
         project_names = [p['Name'] for p in json.loads(p.stdout)]
     else:
         project_names = args.projects.split(',')
-    print('Importing projects:', project_names)
-
+    
     if args.groups is None:
         g = subprocess.run('openstack group list --format json'.split(), text=True, capture_output=True)
         group_names = [g['Name'] for g in json.loads(g.stdout)]
     else:
         group_names = args.groups.split(',')
 
+    if args.users is None:
+        u = subprocess.run('openstack user list --format json'.split(), text=True, capture_output=True)
+        user_names = [u['Name'] for u in json.loads(u.stdout)]
+    else:
+        user_names = args.users.split(',')
+    
     # run API queries:
     project_objs = dict((project_name , Project(project_name)) for project_name in project_names)
     group_objs = dict((group_name, Group(group_name)) for group_name in group_names)
+    user_objs = dict((user_name, User(user_name)) for user_name in user_names)
     
     # create a datastructure with the config in Python form:
     config_py = {
@@ -158,20 +178,19 @@ if __name__ == "__main__":
             # TODO: could tidy this into a function?
             "projects":dict((n, p.config()) for n, p in project_objs.items()),
             "groups":dict((n, g.config()) for n, g in group_objs.items()),
+            "users":dict((n, u.config()) for n, u in user_objs.items()),
         }
     }
 
-    # convert to hcl
+    # convert to hcl config:
     config_hcl=hcl.to_hcl(config_py)
-
     with open(args.config, 'w') as config_file:
         config_file.write(config_hcl)
     print(f'written {args.config}')
 
+    # convert to hcl import blocks:
+    objs = flatten((project_objs.values(), group_objs.values(), user_objs.values()))
     with open(args.imports, 'w') as imports_file:
-        # TODO: tidy
-        for p in project_objs.values():
-            imports_file.write('\n'.join(p.import_block()) + '\n')
-        for p in group_objs.values():
-            imports_file.write('\n'.join(p.import_block()) + '\n')
+        for o in objs:
+            imports_file.write('\n'.join(o.import_block()) + '\n')
     print(f'written {args.imports}')
