@@ -74,7 +74,7 @@ class ComputeQuota(OSResource):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', default='config.tf') # TODO: change to main.tf
+    parser.add_argument('--config', default='main.tf')
     parser.add_argument('--imports', default='imports.tf')
     parser.add_argument('--projects', default=None)
     args = parser.parse_args()
