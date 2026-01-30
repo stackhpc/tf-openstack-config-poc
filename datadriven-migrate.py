@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, subprocess, json, pprint, argparse
+import sys, subprocess, json, pprint, argparse, os
 import to_tf
 
 IMPORT_TEMPLATE="""
@@ -19,6 +19,8 @@ module "openstack" {{
 }}
 """
 
+DEBUG=os.getenv('DEBUG', default=False)
+
 def items_to_dict(lst, key='Resource', value='Limit'):
     d = {}
     for o in lst:
@@ -30,7 +32,10 @@ class OSResource:
     transform = None
 
     def eval(self, as_json=True, transform=None):
+        if DEBUG: print('running:', self.os_cmd)
         p = subprocess.run(self.os_cmd.split(), text=True, capture_output=True)
+        if p.returncode > 0:
+            raise ValueError(p.stderr)
         values = json.loads(p.stdout) if as_json else p.stdout.strip()
         if transform:
             values = transform(values)
@@ -90,25 +95,25 @@ if __name__ == "__main__":
         project_names = args.projects.split(',')
     print('Importing projects:', project_names)
 
-    # generate python datastructure with classes:
-    projects = dict((project_name , Project(project_name)) for project_name in project_names)
+    # run API queries:
+    project_objs = dict((project_name , Project(project_name)) for project_name in project_names)
+    
+    # create a datastructure with the config in Python form:
+    config_py = {
+        ("module", "openstack"):{
+            "source":"TODO",
+            "projects":dict((n, p.config()) for n, p in project_objs.items())
+        }
+    }
 
-    # TODO: not sure of best way to handle the fact the entire file isn't
-    # maybe should let tofu fmt handle indentation??
-
-    # convert that to literals only:
-    project_config = dict((n, p.config()) for n, p in projects.items())
-
-    # TODO: we could probably generate a single config object and then walk it?
-    project_tf=to_tf.to_tf(project_config, indent=0) # indent depends on template :-(
+    # convert to hcl
+    config_hcl=to_tf.to_tf(config_py)
 
     with open(args.config, 'w') as config_file:
-        config_txt = CONFIG_TEMPLATE.format(project_tf=project_tf)
-        #config_txt = to_tf.to_tf(config)
-        config_file.write(config_txt)
+        config_file.write(config_hcl)
     print(f'written {args.config}')
 
     with open(args.imports, 'w') as imports_file:
-        for p in projects.values():
+        for p in project_objs.values():
             imports_file.write('\n'.join(p.import_block()) + '\n')
     print(f'written {args.imports}')
