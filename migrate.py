@@ -21,6 +21,7 @@ def items_to_dict(lst, key='Resource', value='Limit'):
 class OSResource:
 
     transform = None
+    children = {}
 
     def eval(self, as_json=True, transform=None):
         if DEBUG: print('running:', self.os_cmd)
@@ -53,14 +54,14 @@ class Project(OSResource):
         self.os_cmd = f"openstack project show {self.name} --format json"
         self.eval()
         self.children = {
-            "compute_quotas": ComputeQuota(self.name, self.values['id'])
+            "compute_quota": ComputeQuota(self.name, self.values['id']),
+            "blockstorage_quota": BlockStorageQuota(self.name, self.values['id']),
+            "network_quota": NetworkQuota(self.name, self.values['id']),
         }
         self.address = f'module.openstack.openstack_identity_project_v3.project["{self.name}"]'
         self.tofu_id = self.values['id']
     
 class ComputeQuota(OSResource):
-
-    children = {}
     
     def __init__(self, project_name, project_id):
         self.project_name = project_name
@@ -69,7 +70,30 @@ class ComputeQuota(OSResource):
         self.eval(transform=items_to_dict)
         self.config_values = self.values.keys()
         self.address = f'module.openstack.openstack_compute_quotaset_v2.project["{self.project_name}"]'
-        self.tofu_id = f"{self.project_id}/RegionOne"
+        self.tofu_id = f"{self.project_id}/RegionOne" # TODO: FIX REGION?
+
+class BlockStorageQuota(OSResource):
+    
+    def __init__(self, project_name, project_id):
+        self.project_name = project_name
+        self.project_id = project_id
+        self.os_cmd = f"openstack quota show --volume -f json {self.project_id}"    
+        self.eval(transform=items_to_dict)
+        self.config_values = self.values.keys()
+        self.address = f'module.openstack.openstack_blockstorage_quotaset_v3.project["{self.project_name}"]'
+        self.tofu_id = f"{self.project_id}/RegionOne"  # TODO: FIX REGION?
+
+class NetworkQuota(OSResource):
+    
+    def __init__(self, project_name, project_id):
+        self.project_name = project_name
+        self.project_id = project_id
+        self.os_cmd = f"openstack quota show --network -f json {self.project_id}"    
+        self.eval(transform=items_to_dict)
+        self.config_values = self.values.keys()
+        self.address = f'module.openstack.openstack_networking_quota_v2.project["{self.project_name}"]'
+        self.tofu_id = f"{self.project_id}/RegionOne"  # TODO: FIX REGION?
+
 
 if __name__ == "__main__":
 
