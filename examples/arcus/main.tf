@@ -77,6 +77,21 @@ module "openstack" {
     },
   ]
 
+  users = {
+    user1 = {
+       description = "User 1"
+       email = "user1@example.com"
+       groups = [ "GroupA" ]
+       password = "super-secret-password"
+    },
+    user2 = {
+       description = "User 2"
+       email = "user2@example.com"
+       groups = [ "GroupA", "GroupB" ]
+       password = "super-secret-password"
+    }
+  }
+
   # TODO: flavor_rbac
   # agreed to keep separate from network, as for ansible
 

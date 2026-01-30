@@ -23,7 +23,7 @@ resource "openstack_identity_user_v3" "user" {
 }
 
 resource "openstack_identity_user_membership_v3" "user_membership" {
-    for_each = {for ix, m in local.groups_list: ix => m}
+    for_each = {for m in local.groups_list: "${m.user}:${m.group}" => m}
 
     user_id  = openstack_identity_user_v3.user[each.value.user].id
     group_id = openstack_identity_group_v3.group[each.value.group].id
