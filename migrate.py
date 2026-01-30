@@ -9,16 +9,7 @@ import {{
     id = "{tofu_id}"
 }}
 """
-CONFIG_TEMPLATE="""
-module "openstack" {{
-  source = "TODO"
-
-  projects = {{
-  {project_tf}
-  }}
-}}
-"""
-
+MODULE_SOURCE="../../modules/openstack_config"
 DEBUG=os.getenv('DEBUG', default=False)
 
 def items_to_dict(lst, key='Resource', value='Limit'):
@@ -101,7 +92,7 @@ if __name__ == "__main__":
     # create a datastructure with the config in Python form:
     config_py = {
         ("module", "openstack"):{
-            "source":"TODO",
+            "source":f"{MODULE_SOURCE}",
             "projects":dict((n, p.config()) for n, p in project_objs.items())
         }
     }
