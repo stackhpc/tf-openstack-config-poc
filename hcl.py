@@ -78,7 +78,7 @@ def to_hcl(obj):
         
         # TODO: maybe get rid of this so we don't define null values for brevity?
         elif current is None:
-            if key is None:  # List item
+            if key is None:  # List item - NB; for dicts, key/value for null values are not output
                 lines.append(f'{prefix}null,')
         
         elif current == NEWLINE:
