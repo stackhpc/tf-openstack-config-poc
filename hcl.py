@@ -80,8 +80,6 @@ def to_hcl(obj):
         elif current is None:
             if key is None:  # List item
                 lines.append(f'{prefix}null,')
-            else:  # Dict value
-                lines.append(f'{prefix}{key} = null')
         
         elif current == NEWLINE:
             lines.append('')
