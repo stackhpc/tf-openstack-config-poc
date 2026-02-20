@@ -57,7 +57,7 @@ Items marked
   - NO: keypairs
   - YES*: quotas
 - YES*: groups
-- YES: users - **WARNING: passwords will be stored in state!**
+- YES*: users - **WARNING: passwords will be stored in state!**
 - [YES]: role assignments
 - NO: openstack_routers
 - NO: openstack_security_groups
@@ -124,7 +124,7 @@ To set this up run:
 python3 -m venv venv
 . venv/bin/activate
 pip install -U pip
-pip install python-openstackclient
+pip install python-openstackclient==8.0.0 # NB won't work on later due to formatting errors
 ```
 
 Then run
@@ -138,7 +138,7 @@ to query OpenStack and generate:
 - `imports.tf` - [import blocks](https://opentofu.org/docs/language/import/)
   linking the above configuration to the cloud resources
 
-Run `migrate.py -h` to see options controlling this proces.
+Run `migrate.py -h` to see options controlling this process.
 
 The generated files should be reviewed and if necessary, modified. Note not all
 features currently support migration.

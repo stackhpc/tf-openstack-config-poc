@@ -1,4 +1,33 @@
 #!/usr/bin/env python3
+""""
+This needs to produce:
+a) An HCL fragment defining the config, i.e. a module block with arguments
+   which are valid module input variables - this is a nested HCL datastructure
+b) A series of import blocks
+
+For a), the way this works is to actually produce a *python* (nested) datastructure
+first, then convert that to HCL. Noting that the module input variables are actually
+*containers*, e.g. a map of projects etc:
+- There is a dataclass representing each entry in an input variable (e.g. a project, a user etc)
+- There is a load_ function which constructs that dataclass
+The load_ function simply:
+- Uses a helper function to make an openstack CLI call [1] and return a python
+  data structure.
+- Uses the returne data to create the dataclass
+
+The dataclass:
+- Has an attribute for each attribute on the HCL container
+- Has methods:
+    to_data(): Return a python datastructure
+    to_import(): Return a list of import blocks
+
+Then at the "top-level" in the code we construct a python datastructure
+which represents the HCL, then convert it.
+
+[1]: These are more regularly structured than using the sdk functions!
+
+"""
+
 
 import subprocess, json, pprint, argparse, os, itertools
 from dataclasses import dataclass
@@ -108,21 +137,28 @@ class User:
     description: str
     id: str
     email: str
-    config_keys = ['description', 'email'] # TODO: groups
+    groups: list[str]
+    config_keys = ['description', 'email', 'groups']
 
     def to_data(self):
         # should return a python datastructure
         return {k: getattr(self, k) for k in self.config_keys}
+
+    def to_import(self):
+        blocks = [
+            fmt_import(f'module.openstack.openstack_identity_user_v3.user["{self.name}"]', self.id)
+        ]
+        return blocks
     
 def load_user(name):
     user = run_os_cmd(f"openstack user show --format json {name}")
+    groups = run_os_cmd(f"openstack group list --format json --user {user['id']}")
     return User(name=name,
                 description=user['description'],
                 id=user['id'],
                 email=user['email'],
-                )
-    
-        
+                groups=[g['Name'] for g in groups]
+                )        
 
 if __name__ == "__main__":
 
@@ -179,8 +215,7 @@ if __name__ == "__main__":
     print(f'written {args.config}')
 
     # # convert to hcl import blocks:
-    # #objs = flatten((project_objs.values(), group_objs.values(), user_objs.values()))
-    objs = flatten((project_objs.values(), group_objs.values()))
+    objs = flatten((project_objs.values(), group_objs.values(), user_objs.values()))
     with open(args.imports, 'w') as imports_file:
         for o in objs:
             imports_file.write('\n'.join(o.to_import()) + '\n')
