@@ -42,17 +42,23 @@ This section provides an initial comparison of functionality vs:
 
 Note this is not currentky complete either in breadth or depth!
 
+Items marked
+- YES* support "migration" - see section below.
+- [YES] are additional functionality not supported in openstack-config
+
 - TODO: openstack_domains
   - Still don't entirely understand TF approach/resources for these.
   - Expecting domains to be pre-existing, but may want to support multiple domains.
-- YES: openstack_projects:
-  - YES: name
-  - YES: description
+- YES*: openstack_projects:
+  - YES*: name
+  - YES*: description
   - TODO: project_domain
   - TODO: user_domain
-  - YES: users - **WARNING: passwords will be stored in state!**
   - NO: keypairs
-  - YES: quotas
+  - YES*: quotas
+- YES*: groups
+- YES*: users - **WARNING: passwords will be stored in state!**
+- [YES]: role assignments
 - NO: openstack_routers
 - NO: openstack_security_groups
 - YES: openstack_networks_rbac
@@ -107,6 +113,48 @@ Hit this:
 worked on 3rd attempt :-(
 
 I can't fix this with depends_on, I think this is a genuine bug?
+
+## Migration
+This repository contains some additional, experimental tooling to define inputs
+for this repo based on existing OpenStack resources.
+
+To set this up run:
+
+```shell
+python3 -m venv venv
+. venv/bin/activate
+pip install -U pip
+pip install python-openstackclient==8.0.0 # NB won't work on later due to formatting errors
+```
+
+Then run
+
+```shell
+migrate.py
+```
+
+to query OpenStack and generate:
+- `main.tf` - an example configuration using this module
+- `imports.tf` - [import blocks](https://opentofu.org/docs/language/import/)
+  linking the above configuration to the cloud resources
+
+Run `migrate.py -h` to see options controlling this process.
+
+The generated files should be reviewed and if necessary, modified. Note not all
+features currently support migration.
+
+To then actually import these resources into the OpenTofu state run:
+
+```shell
+tofu init # if necessary
+tofu apply
+```
+
+noting where the plan indicates resources will be imported.
+
+Note that the import blocks in the `imports.tf` file are idempotent; once
+the configuration has been "applied" to import them, this file may be removed
+or left/committed, it does not matter.
 
 ## TODO
 - Fix user passwords ending up in state?
