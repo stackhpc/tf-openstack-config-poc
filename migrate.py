@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import subprocess, json, pprint, argparse, os, itertools
+from dataclasses import dataclass
 import hcl
 
 IMPORT_TEMPLATE="""
@@ -29,144 +30,110 @@ def items_to_dict(lst, key='Resource', value='Limit'):
         d[o[key]] = o[value]
     return d
 
-class OSResource:
+def run_os_cmd(os_cmd, as_json=True):
+    """" Returns a dict of key/values from command stdout """
+    if DEBUG: print('DEBUG os_cmd:', os_cmd)
+    p = subprocess.run(os_cmd.split(), text=True, capture_output=True)
+    if p.returncode > 0:
+        raise ValueError(p.stderr)
+    values = json.loads(p.stdout) if as_json else p.stdout
+    if DEBUG: print('DEBUG values:', values)
+    return values
 
-    name = None
-    os_cmd = None
-    as_json = True
-    children = {}
-    transform = None
-    config_keys = {}
-    address = None # is there a better way to force this?
-    id_field = 'id'
-    tofu_id = None
+def fmt_import(address, tofu_id):
+    return IMPORT_TEMPLATE.format(address=address, tofu_id=tofu_id).strip()
 
-    def __init__(self, name, parent=None):
-        self.name = name
-        self.parent = parent
-        os_cmd = self.os_cmd.format(name=name)
-        if DEBUG: print('DEBUG os_cmd:', os_cmd)
-        p = subprocess.run(os_cmd.split(), text=True, capture_output=True)
-        if p.returncode > 0:
-            raise ValueError(p.stderr)
-        values = json.loads(p.stdout) if self.as_json else p.stdout.strip()
-        if DEBUG: print('DEBUG values:', values)
-        if self.transform:
-            values = self.transform(values)
-            if DEBUG: print('DEBUG transformed:', values)
-        self.id = values[self.id_field]
-        self.values = values
-
-    def config(self):
-        # TODO: explain this is the common case where
-        # each object returns a dict, with keys from self.config_values
-        # and values from returned values, descending into child items
-        d = dict((k, self.values[k]) for k in self.config_keys)
-        for k, v in self.children.items():
-            d[k] = v.config()
-        return d
+@dataclass
+class Project:
+    name: str
+    description: str
+    id: str
+    compute_quota: dict
+    network_quota: dict
+    blockstorage_quota: dict
+    config_keys = ['description', 'compute_quota', 'network_quota', 'blockstorage_quota']
     
-    def import_block(self):
-        if self.address is None:
-            raise ValueError(f'address property not set on {self}')
-        if self.tofu_id is None:
-            raise ValueError(f'tofu_id property not set on {self}')
-        address = self.address.format(name=self.name)
-        tofu_id = self.tofu_id.format(id=self.id)
-        blocks = [IMPORT_TEMPLATE.format(address=address, tofu_id=tofu_id).strip()]
-        for v in self.children.values():
-            blocks.extend(v.import_block())
-        return blocks
-
-class Project(OSResource):
-
-    config_keys = ['description']
-    os_cmd = "openstack project show {name} --format json"
-    address = 'module.openstack.openstack_identity_project_v3.project["{name}"]'
-    tofu_id = "{id}" # could do this as e.g. self.tofu_id():?
-
-    # how do I do these??
-            # self.children = {
-            #     "compute_quota": ComputeQuota(self.name, self.values['id']),
-            #     "blockstorage_quota": BlockStorageQuota(self.name, self.values['id']),
-            #     "network_quota": NetworkQuota(self.name, self.values['id']),
-            # }
+    def to_data(self):
+        # should return a python datastructure
+        return {k: getattr(self, k) for k in self.config_keys}
+    
+    def to_import(self):
         
+        blocks = [
+            fmt_import(f'module.openstack.openstack_identity_project_v3.project["{self.name}"]', self.id),
+            fmt_import(f'module.openstack.openstack_compute_quotaset_v2.project["{self.name}"]', f"{self.id}/RegionOne"), # TODO: FIX REGION?
+            fmt_import(f'module.openstack.openstack_networking_quota_v2.project["{self.name}"]', f"{self.id}/RegionOne"), # TODO: FIX REGION?
+            fmt_import(f'module.openstack.openstack_blockstorage_quotaset_v3.project["{self.name}"]', f"{self.id}/RegionOne"), # TODO: FIX REGION?
+        ]
+        return blocks
     
-class ComputeQuota(OSResource):
+def load_project(name) -> Project:
+    proj = run_os_cmd(f"openstack project show {name} --format json")
+    compute_quota = run_os_cmd(f"openstack quota show --compute --format json {proj['id']}")
+    network_quota = run_os_cmd(f"openstack quota show --network --format json {proj['id']}")
+    blockstorage_quota = run_os_cmd(f"openstack quota show --volume --format json {proj['id']}")
+    return Project(
+        name=proj['name'],
+        description=proj['description'],
+        id=proj['id'],
+        compute_quota=items_to_dict(compute_quota),
+        network_quota=items_to_dict(network_quota),
+        blockstorage_quota=items_to_dict(blockstorage_quota),
+    )
+
+
+@dataclass
+class Group:
+    name: str
+    description: str
+    id: str
+        
+    def to_import(self):
+        blocks = [
+            fmt_import(f'module.openstack.openstack_identity_group_v3.group["{self.name}"]', self.id)
+        ]
+        return blocks
     
-    def __init__(self, project_name, project_id):
-        self.project_name = project_name
-        self.project_id = project_id
-        self.os_cmd = f"openstack quota show --compute -f json {self.project_id}"    
-        self.eval(transform=items_to_dict)
-        self.config_values = self.values.keys()
-        self.address = f'module.openstack.openstack_compute_quotaset_v2.project["{self.project_name}"]'
-        self.tofu_id = f"{self.project_id}/RegionOne" # TODO: FIX REGION?
+def load_group(name) -> Group:
+    group = run_os_cmd(f'openstack group show --format json  {name}')
+    return Group(
+        name=name,
+        description=group['description'],
+        id=group['id']
+    )
 
-class BlockStorageQuota(OSResource):
+@dataclass
+class User:
+    name: str
+    description: str
+    id: str
+    email: str
+    config_keys = ['description', 'email'] # TODO: groups
+
+    def to_data(self):
+        # should return a python datastructure
+        return {k: getattr(self, k) for k in self.config_keys}
     
-    def __init__(self, project_name, project_id):
-        self.project_name = project_name
-        self.project_id = project_id
-        self.os_cmd = f"openstack quota show --volume -f json {self.project_id}"    
-        self.eval(transform=items_to_dict)
-        self.config_values = self.values.keys()
-        self.address = f'module.openstack.openstack_blockstorage_quotaset_v3.project["{self.project_name}"]'
-        self.tofu_id = f"{self.project_id}/RegionOne"  # TODO: FIX REGION?
-
-class NetworkQuota(OSResource):
+def load_user(name):
+    user = run_os_cmd(f"openstack user show --format json {name}")
+    return User(name=name,
+                description=user['description'],
+                id=user['id'],
+                email=user['email'],
+                )
     
-    def __init__(self, project_name, project_id):
-        self.project_name = project_name
-        self.project_id = project_id
-        self.os_cmd = f"openstack quota show --network -f json {self.project_id}"    
-        self.eval(transform=items_to_dict)
-        self.config_values = self.values.keys()
-        self.address = f'module.openstack.openstack_networking_quota_v2.project["{self.project_name}"]'
-        self.tofu_id = f"{self.project_id}/RegionOne"  # TODO: FIX REGION?
-
-class Group(OSResource):
-    def __init__(self, group_name):
-        self.group_name = group_name
-        self.os_cmd = f"openstack group show -f json {self.group_name}"
-        self.eval()
-        self.address = f'module.openstack.openstack_identity_group_v3.group["{self.group_name}"]'
-        self.tofu_id = self.values['id']
-
-    def config(self):
-        return self.values['description']
-
-class User(OSResource):
-    def __init__(self, user_name):
-        self.user_name = user_name
-        self.os_cmd = f"openstack user show -f json {self.user_name}"
-        self.eval()
-        self.config_values = ['description', 'email'] # TODO: groups
-        self.address = f'module.openstack.openstack_identity_user_v3.user["{self.user_name}"]'
-        self.tofu_id = self.values['id']
-        self.children = {
-            'groups': UserGroups(self.values['id'])
-        }
-
-def extract_keys(lst, key='Name'):
-    return [[key] for d in lst]
-
-class UserGroups(OSResource):
-    def __init__(self, user_id):
-        self.user_id = user_id
-        self.os_cmd = f"openstack group list -f json --user {self.user_id}"
-        self.eval(transform=extract_keys)
-        self.config_values = ['Name']
+        
 
 if __name__ == "__main__":
+
+    # TODO: really need to handle domain to add users!
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default='main.tf', help="path for created file containing OpenTofu configuration (default: main.tf)")
     parser.add_argument('--imports', default='imports.tf', help="path for created file containing import blocks (default: imports.tf)")
     parser.add_argument('--projects', default=None, help="comma-separated list of projects to import (default: all)")
     parser.add_argument('--groups', default=None, help="comma-separated list of groups to import (default: all)")
-    parser.add_argument('--users', default=None, help="comma-separated list of users to import (default: all)")
+    parser.add_argument('--users', default=None, help="comma-separated list of users to import (default: all in 'default' domain)")
     args = parser.parse_args()
 
     # TODO: could tidy this up!
@@ -175,32 +142,33 @@ if __name__ == "__main__":
         project_names = [p['Name'] for p in json.loads(p.stdout)]
     else:
         project_names = args.projects.split(',')
-    
-    # if args.groups is None:
-    #     g = subprocess.run('openstack group list --format json'.split(), text=True, capture_output=True)
-    #     group_names = [g['Name'] for g in json.loads(g.stdout)]
-    # else:
-    #     group_names = args.groups.split(',')
-
-    # if args.users is None:
-    #     u = subprocess.run('openstack user list --format json'.split(), text=True, capture_output=True)
-    #     user_names = [u['Name'] for u in json.loads(u.stdout)]
-    # else:
-    #     user_names = args.users.split(',')
+    if args.groups is None:
+        g = subprocess.run('openstack group list --format json'.split(), text=True, capture_output=True)
+        group_names = [g['Name'] for g in json.loads(g.stdout)]
+    else:
+        group_names = args.groups.split(',')
+    if args.users is None: # TODO: handle non-default domain!
+        u = subprocess.run('openstack user list --domain default --format json'.split(), text=True, capture_output=True)
+        user_names = [u['Name'] for u in json.loads(u.stdout)]
+    else:
+        user_names = args.users.split(',')
     
     # run API queries:
-    project_objs = dict((project_name , Project(project_name)) for project_name in project_names)
-    # group_objs = dict((group_name, Group(group_name)) for group_name in group_names)
-    # user_objs = dict((user_name, User(user_name)) for user_name in user_names)
+    project_objs = {p: load_project(p) for p in sorted(project_names)}
+    group_objs = {g: load_group(g) for g in sorted(group_names)}
+    user_objs = {u: load_user(u) for u in sorted(user_names)}
+
+    # for k, v in project_objs.items():
+    #     print(k)
+    #     print(type(v))
     
     # create a datastructure with the config in Python form:
     config_py = {
         ("module", "openstack"):{
             "source":f"{MODULE_SOURCE}",
-            # TODO: could tidy this into a function?
-            "projects":dict((n, p.config()) for n, p in project_objs.items()),
-            # "groups":dict((n, g.config()) for n, g in group_objs.items()),
-            # "users":dict((n, u.config()) for n, u in user_objs.items()),
+            "projects":dict((n, p.to_data()) for n, p in project_objs.items()),
+            "groups":{g.name: g.description for g in group_objs.values()},
+            "users":{n: u.to_data() for n, u in user_objs.items()},
         }
     }
 
@@ -210,10 +178,10 @@ if __name__ == "__main__":
         config_file.write(config_hcl)
     print(f'written {args.config}')
 
-    # convert to hcl import blocks:
-    #objs = flatten((project_objs.values(), group_objs.values(), user_objs.values()))
-    objs = project_objs.values()
+    # # convert to hcl import blocks:
+    # #objs = flatten((project_objs.values(), group_objs.values(), user_objs.values()))
+    objs = flatten((project_objs.values(), group_objs.values()))
     with open(args.imports, 'w') as imports_file:
         for o in objs:
-            imports_file.write('\n'.join(o.import_block()) + '\n')
+            imports_file.write('\n'.join(o.to_import()) + '\n')
     print(f'written {args.imports}')
