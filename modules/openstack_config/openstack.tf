@@ -24,6 +24,24 @@ variable "network_rbac" {
     default = []
 }
 
+variable "flavors" {
+    type = any
+    description = <<-EOT
+        Mapping of flavor definitions. Key is flavor name, and must be quoted
+        if it contains ".". Possible values:
+            ram: Required integer
+            vcpus: Required integer
+            disk: Required integer
+            ephemeral: Optional integer
+            swap: Optional integer
+            rx_tx_factor: Optional
+            is_public: Optional bool. Default true. If "projects" is non-empty this is ignored and set false
+            flavor_id: Optional string
+            extra_specs: Optional mapping
+    EOT
+    default = {}
+}
+
 # TODO: more outputs?
 output "projects" {
     #value = {for k, v in openstack_identity_project_v3.project: k => v.id}

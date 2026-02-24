@@ -61,8 +61,8 @@ are additional functionality not supported in openstack-config
 - NO: openstack_routers
 - NO: openstack_security_groups
 - YES: openstack_networks_rbac
-- TODO: openstack_flavors
-    - will provide flavor RBAC instead
+- YES: openstack_flavors
+- TODO: flavor RBAC
 - NO: openstack_host_aggregates
 - NO: openstack_images
 - OUT OF SCOPE: openstack_image_elements

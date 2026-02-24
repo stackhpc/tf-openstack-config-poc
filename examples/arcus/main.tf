@@ -24,6 +24,19 @@ variable "small_blockstorage_quota" {
   }
 }
 
+
+# Demo how to deal with different-shaped server SKUs:
+variable "flavor_icelake_small" {
+  default = {
+    disk = 20
+    ram = 1024
+    extra_specs = {
+      "trait:CUSTOM_CORE_ICELAKE" = "required"
+    }
+    projects = ["sb-test-1", "sb-test-2"]
+  }
+}
+
 module "openstack" {
   source = "../../modules/openstack_config"
 
@@ -90,6 +103,11 @@ module "openstack" {
        groups = [ "GroupA", "GroupB" ]
        password = "super-secret-password"
     }
+  }
+
+  flavors = {
+    "sb.icelake.a" = merge(var.flavor_icelake_small, {vcpus = 2})
+    "sb.icelake.b" = merge(var.flavor_icelake_small, {vcpus = 4})
   }
 
   # TODO: flavor_rbac
