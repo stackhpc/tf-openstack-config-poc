@@ -65,13 +65,26 @@ def run_os_cmd(os_cmd, as_json=True):
     if DEBUG: print('DEBUG os_cmd:', os_cmd)
     p = subprocess.run(os_cmd.split(), text=True, capture_output=True)
     if p.returncode > 0:
-        raise ValueError(p.stderr)
+        print('DEBUG os_cmd:', os_cmd)
+        print('DEBUG stderr', p.stderr)
+        exit(1)
     values = json.loads(p.stdout) if as_json else p.stdout
     if DEBUG: print('DEBUG values:', values)
     return values
 
 def fmt_import(address, tofu_id):
     return IMPORT_TEMPLATE.format(address=address, tofu_id=tofu_id).strip()
+
+def os_resource_list(resource_type, extra_os_args=None):
+    """ Return a list of OpenStack resource names for the given resource type """
+    cmd = f'openstack {resource_type} list --format json'.split() + (extra_os_args or [])
+    p = subprocess.run(cmd, text=True, capture_output=True)
+    try:
+        names = [p['Name'] for p in json.loads(p.stdout)]
+    except Exception:
+        print('DEBUG:', p.stdout)
+        raise
+    return names
 
 @dataclass
 class Project:
@@ -163,8 +176,6 @@ def load_user(name):
 
 if __name__ == "__main__":
 
-    # TODO: really need to handle domain to add users!
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default='main.tf', help="name for created file containing OpenTofu configuration (default: main.tf)")
     parser.add_argument('--imports', default='imports.tf', help="name for created file containing import blocks (default: imports.tf)")
@@ -172,34 +183,19 @@ if __name__ == "__main__":
     parser.add_argument('--projects', default=None, help="comma-separated list of projects to import (default: all)")
     parser.add_argument('--groups', default=None, help="comma-separated list of groups to import (default: all)")
     parser.add_argument('--users', default=None, help="comma-separated list of users to import (default: all in 'default' domain)")
+    parser.add_argument('--flavors', default=None, help="comma-separated list of flavors to import (default: all)")
     args = parser.parse_args()
 
-    # TODO: could tidy this up!
-    if args.projects is None:
-        p = subprocess.run('openstack project list --format json'.split(), text=True, capture_output=True)
-        project_names = [p['Name'] for p in json.loads(p.stdout)]
-    else:
-        project_names = args.projects.split(',')
-    if args.groups is None:
-        g = subprocess.run('openstack group list --format json'.split(), text=True, capture_output=True)
-        group_names = [g['Name'] for g in json.loads(g.stdout)]
-    else:
-        group_names = args.groups.split(',')
-    if args.users is None: # TODO: handle non-default domain!
-        u = subprocess.run('openstack user list --domain default --format json'.split(), text=True, capture_output=True)
-        user_names = [u['Name'] for u in json.loads(u.stdout)]
-    else:
-        user_names = args.users.split(',')
+    # load resource names to import:
+    project_names = args.projects.split(',') if args.projects else os_resource_list("project")
+    group_names = args.groups.split(',') if args.groups else os_resource_list("group")
+    user_names = args.users.split(',') if args.users else os_resource_list("user", ["--domain", "default"])
     
     # run API queries:
     project_objs = {p: load_project(p) for p in sorted(project_names)}
     group_objs = {g: load_group(g) for g in sorted(group_names)}
     user_objs = {u: load_user(u) for u in sorted(user_names)}
 
-    # for k, v in project_objs.items():
-    #     print(k)
-    #     print(type(v))
-    
     # create a datastructure with the config in Python form:
     config_py = {
         ("module", "openstack"):{
@@ -217,7 +213,7 @@ if __name__ == "__main__":
         config_file.write(config_hcl)
     print(f'written {config_path}')
 
-    # # convert to hcl import blocks:
+    # convert to hcl import blocks:
     objs = flatten((project_objs.values(), group_objs.values(), user_objs.values()))
     import_path = Path(args.output).joinpath(args.imports)
     with open(import_path, 'w') as imports_file:
