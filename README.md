@@ -11,7 +11,8 @@ This contains:
   demonstrates two projects, with relevant groups and role assignments. An
   existing Keystone user is used to "fake" a federated user. The example also
   demonstrates how OpenTofu variables can be used similarly to indirection in
-  Ansible to define the same quotas once for multiple projects.
+  Ansible to define e.g. the same quotas once for multiple projects or "base"
+  definitions for multiple similar flavors.
 
 This is not production-ready and does not contain any variable typing/checks or
 docs.
@@ -42,7 +43,7 @@ This section provides an initial comparison of functionality vs:
 
 Note this is not currentky complete either in breadth or depth!
 
-Items marked `YES*` support "migration" - see section below. Items marked `NEW`
+Items marked `*` support "migration" - see section below. Items marked `NEW`
 are additional functionality not supported in openstack-config
 
 - TODO: openstack_domains
@@ -61,7 +62,7 @@ are additional functionality not supported in openstack-config
 - NO: openstack_routers
 - NO: openstack_security_groups
 - YES: openstack_networks_rbac
-- YES: openstack_flavors
+- YES*: openstack_flavors
 - TODO: flavor RBAC
 - NO: openstack_host_aggregates
 - NO: openstack_images

@@ -86,6 +86,9 @@ def os_resource_list(resource_type, extra_os_args=None):
         raise
     return names
 
+def as_dict(obj, keys=[]):
+    return {k: getattr(obj, k) for k in keys}
+
 @dataclass
 class Project:
     name: str
@@ -98,7 +101,7 @@ class Project:
     
     def to_data(self):
         # should return a python datastructure
-        return {k: getattr(self, k) for k in self.config_keys}
+        return as_dict(self, self.config_keys)
     
     def to_import(self):
         
@@ -155,12 +158,9 @@ class User:
 
     def to_data(self):
         # should return a python datastructure
-        return {
-            "name": self.name,
-            "description": self.description,
-            "email": self.email,
-            "groups": [g['Name'] for g in self.groups]
-        }
+        data = as_dict(self, ["name", "description", "email"])
+        data["groups"] = [g['Name'] for g in self.groups]
+        return data
 
     def to_import(self):
         blocks = [
@@ -184,6 +184,54 @@ def load_user(name):
                 groups=groups,
                 )
 
+@dataclass
+class Flavor:
+    name: str
+    id: str
+    ram: int
+    vcpus: int
+    disk: int
+    ephemeral: int
+    swap: int
+    rx_tx_factor: float
+    is_public: bool
+    extra_specs: dict
+    projects: list
+
+    def to_data(self):
+        data = as_dict(self)
+        data["projects"] = [p["Name"] for p in self.projects]
+        return data
+    
+    def to_import(self):
+        blocks = [
+            fmt_import(f'module.openstack.openstack_compute_flavor_v2.flavor["{self.name}"]', self.id)
+        ]
+        for project in self.projects:
+            project_name = project["Name"]
+            project_id = project["ID"]
+            tofu_address = f'module.openstack.openstack_compute_flavor_access_v2.flavor_access["{self.name}:{project_name}"]'
+            tofu_id = f'{self.id}/{project_id}'
+            block = fmt_import(tofu_address, tofu_id)
+        return blocks
+
+def load_flavor(name):
+    flavor = run_os_cmd(f"openstack flavor show --format json {name}")
+    all_projects = run_os_cmd(f"openstack project list --format json") # TODO: memoise
+    return Flavor(
+        name = name,
+        id = flavor['id'],
+        ram = flavor['ram'],
+        vcpus = flavor['vcpus'],
+        disk = flavor['disk'],
+        ephemeral = flavor.get('OS-FLV-EXT-DATA:ephemeral', 0),
+        swap = flavor['swap'],
+        rx_tx_factor = flavor['rxtx_factor'],
+        is_public = flavor['os-flavor-access:is_public'],
+        extra_specs = flavor['properties'],
+        projects = [p for p in all_projects if p['ID'] in flavor['access_project_ids']] # TODO: make stable
+    )
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -200,11 +248,13 @@ if __name__ == "__main__":
     project_names = args.projects.split(',') if args.projects else os_resource_list("project")
     group_names = args.groups.split(',') if args.groups else os_resource_list("group")
     user_names = args.users.split(',') if args.users else os_resource_list("user", ["--domain", "default"])
+    flavor_names = args.flavors.split(',') if args.flavors else os_resource_list("flavor")
     
     # run API queries:
     project_objs = {p: load_project(p) for p in sorted(project_names)}
     group_objs = {g: load_group(g) for g in sorted(group_names)}
     user_objs = {u: load_user(u) for u in sorted(user_names)}
+    flavor_objs = {f: load_flavor(f) for f in sorted(flavor_names)}
 
     # create a datastructure with the config in Python form:
     config_py = {
@@ -213,6 +263,7 @@ if __name__ == "__main__":
             "projects":dict((n, p.to_data()) for n, p in project_objs.items()),
             "groups":{g.name: g.description for g in group_objs.values()},
             "users":{n: u.to_data() for n, u in user_objs.items()},
+            "flavors": {n: f.to_data() for n, f in flavor_objs.items()}
         }
     }
 
@@ -224,7 +275,14 @@ if __name__ == "__main__":
     print(f'written {config_path}')
 
     # convert to hcl import blocks:
-    objs = flatten((project_objs.values(), group_objs.values(), user_objs.values()))
+    objs = flatten(
+        (
+            project_objs.values(),
+            group_objs.values(),
+            user_objs.values(),
+            flavor_objs.values(),
+        )
+    )
     import_path = Path(args.output).joinpath(args.imports)
     with open(import_path, 'w') as imports_file:
         for o in objs:
