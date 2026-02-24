@@ -152,16 +152,26 @@ class User:
     id: str
     email: str
     groups: list[str]
-    config_keys = ['description', 'email', 'groups']
 
     def to_data(self):
         # should return a python datastructure
-        return {k: getattr(self, k) for k in self.config_keys}
+        return {
+            "name": self.name,
+            "description": self.description,
+            "email": self.email,
+            "groups": [g['Name'] for g in self.groups]
+        }
 
     def to_import(self):
         blocks = [
             fmt_import(f'module.openstack.openstack_identity_user_v3.user["{self.name}"]', self.id)
         ]
+        for group in self.groups:
+            group_name = group['Name']
+            group_id = group['ID']
+            address = f'module.openstack.openstack_identity_user_membership_v3.user_membership["{self.name}:{group_name}"]'
+            tofu_id = f'{self.id}/{group_id}'
+            blocks.append(fmt_import(address, tofu_id))
         return blocks
     
 def load_user(name):
@@ -171,8 +181,8 @@ def load_user(name):
                 description=user['description'],
                 id=user['id'],
                 email=user['email'],
-                groups=[g['Name'] for g in groups]
-                )        
+                groups=groups,
+                )
 
 if __name__ == "__main__":
 
