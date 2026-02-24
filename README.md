@@ -42,9 +42,8 @@ This section provides an initial comparison of functionality vs:
 
 Note this is not currentky complete either in breadth or depth!
 
-Items marked
-- YES* support "migration" - see section below.
-- [YES] are additional functionality not supported in openstack-config
+Items marked `YES*` support "migration" - see section below. Items marked `NEW`
+are additional functionality not supported in openstack-config
 
 - TODO: openstack_domains
   - Still don't entirely understand TF approach/resources for these.
@@ -58,7 +57,7 @@ Items marked
   - YES*: quotas
 - YES*: groups
 - YES*: users - **WARNING: passwords will be stored in state!**
-- [YES]: role assignments
+- NEW: role assignments
 - NO: openstack_routers
 - NO: openstack_security_groups
 - YES: openstack_networks_rbac

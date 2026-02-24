@@ -30,6 +30,7 @@ which represents the HCL, then convert it.
 
 
 import subprocess, json, pprint, argparse, os, itertools
+from pathlib import Path
 from dataclasses import dataclass
 import hcl
 
@@ -165,8 +166,9 @@ if __name__ == "__main__":
     # TODO: really need to handle domain to add users!
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', default='main.tf', help="path for created file containing OpenTofu configuration (default: main.tf)")
-    parser.add_argument('--imports', default='imports.tf', help="path for created file containing import blocks (default: imports.tf)")
+    parser.add_argument('--config', default='main.tf', help="name for created file containing OpenTofu configuration (default: main.tf)")
+    parser.add_argument('--imports', default='imports.tf', help="name for created file containing import blocks (default: imports.tf)")
+    parser.add_argument('--output', default='.', help="path to directory containing created files (default: cwd)")
     parser.add_argument('--projects', default=None, help="comma-separated list of projects to import (default: all)")
     parser.add_argument('--groups', default=None, help="comma-separated list of groups to import (default: all)")
     parser.add_argument('--users', default=None, help="comma-separated list of users to import (default: all in 'default' domain)")
@@ -210,13 +212,15 @@ if __name__ == "__main__":
 
     # convert to hcl config:
     config_hcl=hcl.to_hcl(config_py)
-    with open(args.config, 'w') as config_file:
+    config_path = Path(args.output).joinpath(args.config)
+    with open(config_path, 'w') as config_file:
         config_file.write(config_hcl)
-    print(f'written {args.config}')
+    print(f'written {config_path}')
 
     # # convert to hcl import blocks:
     objs = flatten((project_objs.values(), group_objs.values(), user_objs.values()))
-    with open(args.imports, 'w') as imports_file:
+    import_path = Path(args.output).joinpath(args.imports)
+    with open(import_path, 'w') as imports_file:
         for o in objs:
             imports_file.write('\n'.join(o.to_import()) + '\n')
-    print(f'written {args.imports}')
+    print(f'written {import_path}')
