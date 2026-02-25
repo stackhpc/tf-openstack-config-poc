@@ -286,18 +286,18 @@ if __name__ == "__main__":
     parser.add_argument('--config', default='main.tf', help="name for created file containing OpenTofu configuration (default: main.tf)")
     parser.add_argument('--imports', default='imports.tf', help="name for created file containing import blocks (default: imports.tf)")
     parser.add_argument('--output', default='.', help="path to directory containing created files (default: cwd)")
-    parser.add_argument('--projects', default=None, help="comma-separated list of projects to import (default: all)")
-    parser.add_argument('--groups', default=None, help="comma-separated list of groups to import (default: all)")
-    parser.add_argument('--users', default=None, help="comma-separated list of users to import (default: all in 'default' domain)")
-    parser.add_argument('--flavors', default=None, help="comma-separated list of flavors to import (default: all)")
+    parser.add_argument('--projects', nargs="+", help="space-separated list of projects to import (default: all)")
+    parser.add_argument('--groups', nargs="+", help="space-separated list of groups to import (default: all)")
+    parser.add_argument('--users', nargs="+", help="space-separated list of users to import (default: all in 'default' domain)")
+    parser.add_argument('--flavors', nargs="+", help="space-separated list of flavors to import (default: all)")
     # for role assignments, only those covered by project AND group should match
     args = parser.parse_args()
 
     # load resource names to import:
-    project_names = args.projects.split(',') if args.projects else os_resource_list("project")
-    group_names = args.groups.split(',') if args.groups else os_resource_list("group")
-    user_names = args.users.split(',') if args.users else os_resource_list("user", ["--domain", "default"])
-    flavor_names = args.flavors.split(',') if args.flavors else os_resource_list("flavor")
+    project_names = args.projects if args.projects else os_resource_list("project")
+    group_names = args.groups if args.groups else os_resource_list("group")
+    user_names = args.users if args.users else os_resource_list("user", ["--domain", "default"])
+    flavor_names = args.flavors if args.flavors else os_resource_list("flavor")
     
     # run API queries:
     project_objs = {p: load_project(p) for p in sorted(project_names)}
