@@ -199,7 +199,7 @@ class Flavor:
     projects: list
 
     def to_data(self):
-        data = as_dict(self)
+        data = as_dict(self, ['ram', 'vcpus', 'disk', 'ephemeral', 'swap', 'rx_tx_factor', 'is_public', 'extra_specs'])
         data["projects"] = [p["Name"] for p in self.projects]
         return data
     
@@ -213,6 +213,7 @@ class Flavor:
             tofu_address = f'module.openstack.openstack_compute_flavor_access_v2.flavor_access["{self.name}:{project_name}"]'
             tofu_id = f'{self.id}/{project_id}'
             block = fmt_import(tofu_address, tofu_id)
+        blocks.append(block)
         return blocks
 
 def load_flavor(name):
@@ -263,7 +264,7 @@ if __name__ == "__main__":
             "projects":dict((n, p.to_data()) for n, p in project_objs.items()),
             "groups":{g.name: g.description for g in group_objs.values()},
             "users":{n: u.to_data() for n, u in user_objs.items()},
-            "flavors": {n: f.to_data() for n, f in flavor_objs.items()}
+            "flavors": {n: f.to_data() for n, f in flavor_objs.items()},
         }
     }
 
