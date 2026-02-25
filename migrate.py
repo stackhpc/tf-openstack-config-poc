@@ -213,7 +213,7 @@ class Flavor:
             tofu_address = f'module.openstack.openstack_compute_flavor_access_v2.flavor_access["{self.name}:{project_name}"]'
             tofu_id = f'{self.id}/{project_id}'
             block = fmt_import(tofu_address, tofu_id)
-        blocks.append(block)
+            blocks.append(block)
         return blocks
 
 def load_flavor(name):
