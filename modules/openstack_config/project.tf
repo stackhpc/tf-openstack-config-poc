@@ -5,20 +5,6 @@ resource "openstack_identity_project_v3" "project" {
   description = each.value.description
 }
 
-locals {
-  blockstorage_params = [
-    "volumes",
-    "snapshots",
-    "gigabytes",
-    "per_volume_gigabytes",
-    "backups",
-    "backup_gigabytes",
-    "groups",
-    "volume_type_quota"
-  ]
-  
-}
-
 resource "openstack_blockstorage_quotaset_v3" "project" {
   # Skip projects where quotas has no blockstorage keys, else fails with
   # {"code": 400, "message": "Invalid input for field/attribute quota_set. Value: {}. {} does not have enough properties"}
