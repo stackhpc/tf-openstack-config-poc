@@ -73,12 +73,14 @@ def to_hcl(obj):
             else:  # Dict value
                 lines.append(f'{prefix}{key} = "{current}"')
         
-        elif isinstance(current, int):
+        elif isinstance(current, (int, float)): # NB also catches bools!
+            if isinstance(current, bool):
+                current = str(current).lower()
             if key is None:  # List item
                 lines.append(f'{prefix}{current},')
             else:  # Dict value
                 lines.append(f'{prefix}{key} = {current}')
-        
+
         # TODO: maybe get rid of this so we don't define null values for brevity?
         elif current is None:
             if key is None:  # List item - NB; for dicts, key/value for null values are not output
