@@ -29,7 +29,7 @@ which represents the HCL, then convert it.
 """
 
 
-import subprocess, json, pprint, argparse, os, itertools
+import subprocess, json, pprint, argparse, os, itertools, functools
 from pathlib import Path
 from dataclasses import dataclass
 import hcl
@@ -113,20 +113,24 @@ class Project:
         ]
         return blocks
     
-def load_project(name) -> Project:
-    proj = run_os_cmd(f"openstack project show {name} --format json")
-    compute_quota = run_os_cmd(f"openstack quota show --compute --format json {proj['id']}")
-    network_quota = run_os_cmd(f"openstack quota show --network --format json {proj['id']}")
-    blockstorage_quota = run_os_cmd(f"openstack quota show --volume --format json {proj['id']}")
-    return Project(
-        name=proj['name'],
-        description=proj['description'],
-        id=proj['id'],
-        compute_quota=items_to_dict(compute_quota),
-        network_quota=items_to_dict(network_quota),
-        blockstorage_quota=items_to_dict(blockstorage_quota),
-    )
-
+def load_projects(names=None) -> dict[str, Project]:
+    if names is None:
+        names = os_resource_list("project")
+    projects = {}
+    for name in sorted(names):
+        proj = run_os_cmd(f"openstack project show {name} --format json")
+        compute_quota = run_os_cmd(f"openstack quota show --compute --format json {proj['id']}")
+        network_quota = run_os_cmd(f"openstack quota show --network --format json {proj['id']}")
+        blockstorage_quota = run_os_cmd(f"openstack quota show --volume --format json {proj['id']}")
+        projects[name] = Project(
+            name=proj['name'],
+            description=proj['description'],
+            id=proj['id'],
+            compute_quota=items_to_dict(compute_quota),
+            network_quota=items_to_dict(network_quota),
+            blockstorage_quota=items_to_dict(blockstorage_quota),
+        )
+    return projects
 
 @dataclass
 class Group:
@@ -140,13 +144,18 @@ class Group:
         ]
         return blocks
     
-def load_group(name) -> Group:
-    group = run_os_cmd(f'openstack group show --format json  {name}')
-    return Group(
-        name=name,
-        description=group['description'],
-        id=group['id']
-    )
+def load_groups(names=None) -> list[str, Group]:
+    if names is None:
+        names = os_resource_list("group")
+    groups = {}
+    for name in sorted(names):
+        group = run_os_cmd(f'openstack group show --format json  {name}')
+        groups[name] = Group(
+            name=name,
+            description=group['description'],
+            id=group['id']
+        )
+    return groups
 
 @dataclass
 class User:
@@ -174,15 +183,20 @@ class User:
             blocks.append(fmt_import(address, tofu_id))
         return blocks
     
-def load_user(name):
-    user = run_os_cmd(f"openstack user show --format json {name}")
-    groups = run_os_cmd(f"openstack group list --format json --user {user['id']}")
-    return User(name=name,
-                description=user['description'],
-                id=user['id'],
-                email=user['email'],
-                groups=groups,
-                )
+def load_users(names=None) -> list[User]:
+    if names is None:
+        names = os_resource_list("user", ["--domain", "default"])
+    users = {}
+    for name in sorted(names):
+        user = run_os_cmd(f"openstack user show --format json {name}")
+        groups = run_os_cmd(f"openstack group list --format json --user {user['id']}")
+        users[name] = User(name=name,
+                        description=user['description'],
+                        id=user['id'],
+                        email=user['email'],
+                        groups=groups,
+                        )
+    return users
 
 @dataclass
 class Flavor:
@@ -216,22 +230,27 @@ class Flavor:
             blocks.append(block)
         return blocks
 
-def load_flavor(name):
-    flavor = run_os_cmd(f"openstack flavor show --format json {name}")
-    all_projects = run_os_cmd(f"openstack project list --format json") # TODO: memoise
-    return Flavor(
-        name = name,
-        id = flavor['id'],
-        ram = flavor['ram'],
-        vcpus = flavor['vcpus'],
-        disk = flavor['disk'],
-        ephemeral = flavor.get('OS-FLV-EXT-DATA:ephemeral', 0),
-        swap = flavor['swap'],
-        rx_tx_factor = flavor['rxtx_factor'],
-        is_public = flavor['os-flavor-access:is_public'],
-        extra_specs = flavor['properties'],
-        projects = [p for p in all_projects if p['ID'] in flavor['access_project_ids']] # TODO: make stable
-    )
+def load_flavors(names=None) -> dict[str, Flavor]:
+    if names is None:
+        names = os_resource_list("flavor")
+    flavors = {}
+    for name in sorted(names):
+        flavor = run_os_cmd(f"openstack flavor show --format json {name}")
+        all_projects = run_os_cmd(f"openstack project list --format json") # TODO: memoise
+        flavors[name] = Flavor(
+            name = name,
+            id = flavor['id'],
+            ram = flavor['ram'],
+            vcpus = flavor['vcpus'],
+            disk = flavor['disk'],
+            ephemeral = flavor.get('OS-FLV-EXT-DATA:ephemeral', 0),
+            swap = flavor['swap'],
+            rx_tx_factor = flavor['rxtx_factor'],
+            is_public = flavor['os-flavor-access:is_public'],
+            extra_specs = flavor['properties'],
+            projects = [p for p in all_projects if p['ID'] in flavor['access_project_ids']], # TODO: make stable
+        )
+    return flavors
 
 @dataclass
 class RoleAssignment:
@@ -293,24 +312,18 @@ if __name__ == "__main__":
     # for role assignments, only those covered by project AND group should match
     args = parser.parse_args()
 
-    # load resource names to import:
-    project_names = args.projects if args.projects else os_resource_list("project")
-    group_names = args.groups if args.groups else os_resource_list("group")
-    user_names = args.users if args.users else os_resource_list("user", ["--domain", "default"])
-    flavor_names = args.flavors if args.flavors else os_resource_list("flavor")
-    
     # run API queries:
-    project_objs = {p: load_project(p) for p in sorted(project_names)}
-    group_objs = {g: load_group(g) for g in sorted(group_names)}
+    project_objs = load_projects(args.projects)
+    group_objs = load_groups(args.groups)
     role_assign_objs = load_role_assigments(project_objs, group_objs)
-    user_objs = {u: load_user(u) for u in sorted(user_names)}
-    flavor_objs = {f: load_flavor(f) for f in sorted(flavor_names)}
+    user_objs = load_users(args.users)
+    flavor_objs = load_flavors(args.flavors)
 
     # create a datastructure with the config in Python form:
     config_py = {
         ("module", "openstack"):{
             "source":f"{MODULE_SOURCE}",
-            "projects":dict((n, p.to_data()) for n, p in project_objs.items()),
+            "projects":{n: p.to_data() for n, p in project_objs.items()},
             "groups":{g.name: g.description for g in group_objs.values()},
             "role_assignments": [r.to_data() for r in role_assign_objs],
             "users":{n: u.to_data() for n, u in user_objs.items()},
