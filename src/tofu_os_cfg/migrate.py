@@ -32,7 +32,7 @@ which represents the HCL, then convert it.
 import subprocess, json, pprint, argparse, os, itertools, functools
 from pathlib import Path
 from dataclasses import dataclass
-import hcl
+from . import hcl
 
 IMPORT_TEMPLATE="""
 import {{
@@ -289,7 +289,7 @@ def load_role_assigments(project_names, group_names):
             role_assignments.append(role_assignment)
     return role_assignments
 
-if __name__ == "__main__":
+def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default='main.tf', help="name for created file containing OpenTofu configuration (default: main.tf)")
@@ -343,3 +343,6 @@ if __name__ == "__main__":
         for o in objs:
             imports_file.write('\n'.join(o.to_import()) + '\n')
     print(f'written {import_path}')
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tofu-os-cfg"
+description = "Import existing OpenStack state into OpenTofu"
+readme = "README.md"
+requires-python = ">=3.8"
+dynamic = ["version"]
+dependencies = [
+    "python-openstackclient==8.0.0",
+]
+
+[project.scripts]
+tofu-os-cfg = "tofu_os_cfg.migrate:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
+local_scheme = "no-local-version"
