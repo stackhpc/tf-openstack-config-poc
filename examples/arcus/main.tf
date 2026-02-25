@@ -38,7 +38,7 @@ variable "flavor_icelake_small" {
 }
 
 module "openstack" {
-  source = "../../"
+  source = "github.com/stackhpc/tofu-openstack-config?ref=main"
 
   # TODO: domain
   # TODO: add ci/cd - PR tofu fmt, plan/approval (on merge) (don't run external PRs)

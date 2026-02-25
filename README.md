@@ -1,80 +1,109 @@
-# README
+# tofu-openstack-config
 
-Proof of concept for an OpenTofu-based replacement for the Ansible [openstack-config](https://github.com/stackhpc/openstack-config/) for projects with federated users.
+An OpenTofu module and tooling for configuring an existing OpenStack cloud,
+currently supporting defining projects, groups, users, role assignments, flavors and
+RBAC'd networks. See below for more details. Tooling is also provided to generate
+OpenTofu configurations from an existing cloud.
 
-This contains:
+It is intended as an alternative to the Ansible project [stackhpc/openstack-config](https://github.com/stackhpc/openstack-config/),
+with the aim of providing significantly better performance for large configurations
+and better idempotency.
 
-- `modules/openstack_config`: An OpenTofu module to manage OpenStack config.
-  A single module instantiation may define multiple resources within a single
-  domain.
-- `examples/`: Examples of using the module. The `arcus/main.tf` example
-  demonstrates two projects, with relevant groups and role assignments. An
-  existing Keystone user is used to "fake" a federated user. The example also
-  demonstrates how OpenTofu variables can be used similarly to indirection in
-  Ansible to define e.g. the same quotas once for multiple projects or "base"
-  definitions for multiple similar flavors.
+## Example module usage
 
-This is not production-ready and does not contain any variable typing/checks or
-docs.
+To use the functionality here to define configuration for a cloud, create
+an OpenTofu configuration including a module block referencing it. E.g.:
 
-## Usage
+```hcl
+# main.hcl:
 
-With a `clouds.yaml` and `OS_CLOUD`/`OS_CLIENT_CONFIG_FILE` set as necessary run
+module "openstack" {
 
+  # The version here should be changed to the current release:
+  source = "github.com/stackhpc/tofu-openstack-config?ref=main"
+
+  projects = {
+    test = {
+      description = "test project"
+      compute_quota = {
+        instances    = 20
+        cores        = 200
+        ram          = 512000 # 500GB
+      }
+    }
+  }
+}
+```
+
+To install this module into your project, run:
 ```shell
-cd examples/EXAMPLE # select an example
 tofu init
+```
+
+OpenStack credentials should be provided as usual (e.g. via a `clouds.yaml` file
+with `OS_CLIENT_CONFIG_FILE` and `OS_CLOUD` set). Admin credentials are required
+for most uses of this module.
+
+The resources defined in your configuration can then be created using:
+```shell
 tofu apply
 ```
 
-The generated resources can be deleted using
+For more comprehensive examples see the `examples/` directory. The example
+`arcus` demonstrates how to use variables and the [merge function](https://opentofu.org/docs/language/functions/merge/)
+to minimise repeated configuration.
+
+## Functionality
+
+See the module's [variables.tf](./variables.tf) for full details of inputs. Apart
+from a few exceptions noted there, the module generally only handles resources
+defined as its inputs. E.g. when defining role assignments via the `role_assignments`
+input, these can only reference projects defined in the `projects` input.
+
+By default, OpenTofu [limits](https://opentofu.org/docs/cli/commands/apply/#apply-options)
+the number of concurrent operations to 10. This means that for example only API
+calls will be made simultaneously. For large configurations it may be helpful
+to raise this by using the `-parellelism` argument to `tofu apply.` This can
+be set as a default in your shell using e.g.:
+
 ```shell
-tofu destroy
+export TF_CLI_ARGS_apply="-parallelism=25"
 ```
 
-By default OpenTofu will process 10 operations concurrently as it walks the
-resource graph. This can be increased using the `-parallelism=N` option.
-
-## Comparison to stackhpc/openstack-config
+### Comparison to stackhpc/openstack-config
 
 This section provides an initial comparison of functionality vs:
 - https://github.com/stackhpc/openstack-config/blob/main/etc/openstack-config/openstack-config.yml
 - https://github.com/stackhpc/ansible-collection-openstack/tree/main/roles
+Note this is not currently complete either in breadth or depth!
 
-Note this is not currentky complete either in breadth or depth!
+In the "Supported?" column:
+- `Yes` indicates broadly-equivalent functionality is available
+- `New` indicates `stackhpc/openstack-config` does not support this
 
-Items marked `*` support "migration" - see section below. Items marked `NEW`
-are additional functionality not supported in openstack-config
+The "Import?" column refers to support for [importing existing openstack configuration](#importing-existing-openstack-configurations) below.
 
-- TODO: openstack_domains
-  - Still don't entirely understand TF approach/resources for these.
-  - Expecting domains to be pre-existing, but may want to support multiple domains.
-- YES*: openstack_projects:
-  - YES*: name
-  - YES*: description
-  - TODO: project_domain
-  - TODO: user_domain
-  - NO: keypairs
-  - YES*: quotas
-- YES*: groups
-- YES*: users - **WARNING: passwords will be stored in state!**
-- NEW*: role assignments
-    - NB: Only group-based assignments are supported
-- NO: openstack_routers
-- NO: openstack_security_groups
-- YES: openstack_networks_rbac
-- YES*: openstack_flavors
-- TODO: flavor RBAC
-- NO: openstack_host_aggregates
-- NO: openstack_images
-- OUT OF SCOPE: openstack_image_elements
-- OUT OF SCOPE: openstack_image_git_elements
-- OUT OF SCOPE: openstack_container_clusters_templates
-- NO: openstack_ratings_hashmap_field_mappings
-- NO: openstack_ratings_hashmap_service_mappings
+| Feature           | Supported? | Import?  | Comments |
+| ----------------- | ---------- | -------- | -------- |
+| Domains           | No         | N/A      | Only the default domain is used |
+| Projects          | Yes        | Yes      | keypairs not supported |
+| Groups            | Yes        | Yes      | |
+| Users             | Yes        | Yes      | |
+| Role assignments  | New        | Yes      | |
+| Routers           | No         | N/A      | |
+| Security groups   | No         | N/A      | |
+| Network RBAC      | Yes        | No       | |
+| Flavors           | Yes        | Yes      | |
+| Host aggregates   | No         | N/A      | |
+| Images            | No         | N/A      | |
+| Image elements    | No         | N/A      | Considered out of scope |
+| Ratings           | No         | N/A      | |
 
 ## Current Issues
-Hit this on apply:
+
+This section notes some issues hit during testing with `examples/arcus/`.
+
+During `tofu apply`:
 
 ```
 │ Error: Provider produced inconsistent result after apply
@@ -106,40 +135,48 @@ Also not idempotent:
     }
 ```
 
-Hit this:
+During `tofu apply`:
 ```
  Error: Error unassigning openstack_identity_role_assignment_v3 ...: Successfully re-authenticated, but got error executing request: Expected HTTP response code [204] when accessing [DELETE ..., but got 401 instead: {"error":{"code":401,"message":"The request you have made requires authentication.","title":"Unauthorized"}}
  ```
 
-worked on 3rd attempt :-(
+worked on 3rd attempt.
 
-I can't fix this with depends_on, I think this is a genuine bug?
+Does not appear to be fixable with `depends_on`, may be a bug in the underlying provider?
 
-## Migration
-This repository contains some additional, experimental tooling to define inputs
-for this repo based on existing OpenStack resources.
+## Importing existing OpenStack configurations
+This repository contains some additional Python tooling which can query an
+existing OpenStack cloud and define configurations which represent it.
 
-To set this up run:
+### Setup
+
+Create a venv in your project directory:
 
 ```shell
 python3 -m venv venv
 . venv/bin/activate
 pip install -U pip
-pip install python-openstackclient==8.0.0 # NB won't work on later due to formatting errors
 ```
 
-Then run
+Then install the tooling, changing the version as necessary:
 
 ```shell
-migrate.py
+pip install git+https://github.com/stackhpc/tofu-openstack-config@main
 ```
 
-to query OpenStack and generate:
+### Usage
+
+```shell
+tofu-os-cfg
+```
+
+will query OpenStack and generate:
 - `main.tf` - an example configuration using this module
 - `imports.tf` - [import blocks](https://opentofu.org/docs/language/import/)
-  linking the above configuration to the cloud resources
+linking the above configuration to the cloud resources.
 
-Run `migrate.py -h` to see options controlling this process.
+Various options can be used to limit which resources are inspected, run
+`tofu-os-cfg --help` to see them.
 
 The generated files should be reviewed and if necessary, modified. Note not all
 features currently support migration.
@@ -151,11 +188,17 @@ tofu init # if necessary
 tofu apply
 ```
 
-noting where the plan indicates resources will be imported.
+noting that the plan should indicates resources will be imported.
 
-Note that the import blocks in the `imports.tf` file are idempotent; once
-the configuration has been "applied" to import them, this file may be removed
-or left/committed, it does not matter.
+The import blocks in the `imports.tf` file are idempotent; once the configuration
+has been "applied" to import them, this file may be deleted, left in place and/or
+committed, it does not matter.
 
-## TODO
-- Fix user passwords ending up in state?
+### Development
+
+- Create a project directory with a venv.
+- Clone the repo (either inside or outside the project directory), then with the
+  venv run `pip install -e path_to_repo`.
+- Changes to the `src/` files are picked up when running `tofu-os-cfg`.
+- Note that the `--output` argument can be used to determine where files are
+generated.
