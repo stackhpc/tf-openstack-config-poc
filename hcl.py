@@ -18,6 +18,9 @@ def to_hcl(obj):
     while queue:
         current, indent, key = queue.pop(0)
         prefix = ' ' * indent
+
+        if key is not None and ('.' in key or ':' in key):
+            key = f'"{key}"'
         
         if isinstance(current, dict):
             if key is not None:
