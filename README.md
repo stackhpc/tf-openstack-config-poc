@@ -26,9 +26,9 @@ module "openstack" {
     test = {
       description = "test project"
       compute_quota = {
-        instances    = 20
-        cores        = 200
-        ram          = 512000 # 500GB
+        instances = 20
+        cores     = 200
+        ram       = 512000
       }
     }
   }
@@ -166,11 +166,13 @@ pip install git+https://github.com/stackhpc/tofu-openstack-config@main
 
 ### Usage
 
+With the venv activated and OpenStack credentials available as normal, run
+
 ```shell
 tofu-os-cfg
 ```
 
-will query OpenStack and generate:
+This will query OpenStack and generate:
 - `main.tf` - an example configuration using this module
 - `imports.tf` - [import blocks](https://opentofu.org/docs/language/import/)
 linking the above configuration to the cloud resources.
@@ -188,7 +190,7 @@ tofu init # if necessary
 tofu apply
 ```
 
-noting that the plan should indicates resources will be imported.
+noting that the plan should indicate resources will be imported.
 
 The import blocks in the `imports.tf` file are idempotent; once the configuration
 has been "applied" to import them, this file may be deleted, left in place and/or
