@@ -60,6 +60,7 @@ def items_to_dict(lst, key='Resource', value='Limit'):
         d[o[key]] = o[value]
     return d
 
+@functools.cache
 def run_os_cmd(os_cmd, as_json=True):
     """" Returns a dict of key/values from command stdout """
     if DEBUG: print('DEBUG os_cmd:', os_cmd)
@@ -74,17 +75,6 @@ def run_os_cmd(os_cmd, as_json=True):
 
 def fmt_import(address, tofu_id):
     return IMPORT_TEMPLATE.format(address=address, tofu_id=tofu_id).strip()
-
-def os_resource_list(resource_type, extra_os_args=None):
-    """ Return a list of OpenStack resource names for the given resource type """
-    cmd = f'openstack {resource_type} list --format json'.split() + (extra_os_args or [])
-    p = subprocess.run(cmd, text=True, capture_output=True)
-    try:
-        names = [p['Name'] for p in json.loads(p.stdout)]
-    except Exception:
-        print('DEBUG:', p.stdout)
-        raise
-    return names
 
 def as_dict(obj, keys=[]):
     return {k: getattr(obj, k) for k in keys}
@@ -115,7 +105,7 @@ class Project:
     
 def load_projects(names=None) -> dict[str, Project]:
     if names is None:
-        names = os_resource_list("project")
+        names = [n['Name'] for n in run_os_cmd("openstack project list --format json")]
     projects = {}
     for name in sorted(names):
         proj = run_os_cmd(f"openstack project show {name} --format json")
@@ -146,7 +136,7 @@ class Group:
     
 def load_groups(names=None) -> list[str, Group]:
     if names is None:
-        names = os_resource_list("group")
+        names = [n["Name"] for n in run_os_cmd("openstack group list --format json")]
     groups = {}
     for name in sorted(names):
         group = run_os_cmd(f'openstack group show --format json  {name}')
@@ -185,7 +175,7 @@ class User:
     
 def load_users(names=None) -> list[User]:
     if names is None:
-        names = os_resource_list("user", ["--domain", "default"])
+        names = [n["Name"] for n in run_os_cmd("openstack user list --format json --domain default")]
     users = {}
     for name in sorted(names):
         user = run_os_cmd(f"openstack user show --format json {name}")
@@ -232,7 +222,7 @@ class Flavor:
 
 def load_flavors(names=None) -> dict[str, Flavor]:
     if names is None:
-        names = os_resource_list("flavor")
+        names = [n["Name"] for n in run_os_cmd("openstack flavor list --format json")]
     flavors = {}
     for name in sorted(names):
         flavor = run_os_cmd(f"openstack flavor show --format json {name}")
