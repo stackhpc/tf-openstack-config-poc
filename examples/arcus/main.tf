@@ -95,13 +95,12 @@ module "openstack" {
        description = "User 1"
        email = "user1@example.com"
        groups = [ "GroupA" ]
-       password = "super-secret-password"
     },
     user2 = {
        description = "User 2"
        email = "user2@example.com"
        groups = [ "GroupA", "GroupB" ]
-       password = "super-secret-password"
+       password = "super-secret-password" # WARNING: will be saved in state!
     }
   }
 

@@ -57,7 +57,22 @@ variable "groups" {
 }
 
 variable "users" {
-  type    = any
+  description = <<-EOT
+    Map of users. Keys are user names. Values are mappings with keys/values:
+      description: string
+      email: string
+      groups: list of group name strings, must be keys from var.groups
+      password: optional string **WARNING** this will be saved in state
+    If password is provided, this must be changed on first use.
+  EOT
+  type    = map(
+    object({
+      description = string
+      email = string
+      groups = list(string)
+      password = optional(string)
+    })
+  )
   default = {}
 }
 
@@ -83,8 +98,8 @@ variable "network_rbac" {
   description = <<-EOT
     List of network RBAC configurations. Elements are maps with keys/values:
       network: string name of pre-existing network
-      projects: list of project names, must be keys from var.projects
-      access: String access type, "access_as_external" or "access_as_shared"
+      projects: list of project name strings, must be keys from var.projects
+      access: string access type, "access_as_external" or "access_as_shared"
   EOT
   type = list(
     object({
