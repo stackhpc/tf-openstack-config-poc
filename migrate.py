@@ -233,6 +233,53 @@ def load_flavor(name):
         projects = [p for p in all_projects if p['ID'] in flavor['access_project_ids']] # TODO: make stable
     )
 
+@dataclass
+class RoleAssignment:
+    role: dict
+    group: dict
+    project: dict
+
+    def to_data(self):
+        return {
+            "role": self.role["Name"],
+            "group": self.group["Name"],
+            "project": self.project["Name"],
+        }
+
+    def to_import(self):
+        role_name = self.role["Name"]
+        role_id = self.role['ID']
+        group_name = self.group["Name"]
+        group_id = self.group['ID']
+        project_name = self.project["Name"]
+        project_id = self.project["ID"]
+        domain_id = user_id = ''
+        tofu_address = f'module.openstack.openstack_identity_role_assignment_v3.role_assign["{project_name}:{group_name}:{role_name}"]'
+        tofu_id = f'{domain_id}/{project_id}/{group_id}/{user_id}/{role_id}'
+        return [fmt_import(tofu_address, tofu_id)]
+
+def load_role_assigments(project_names, group_names):
+
+    # create dicts keyed by ID so can lookup names:
+    roles = {e['ID']: e for e in run_os_cmd(f"openstack role list --format json")}
+    projects = {e['ID']: e for e in run_os_cmd(f"openstack project list --format json")}
+    groups = {e['ID']: e for e in run_os_cmd(f"openstack group list --format json")}
+
+    role_assignments = []
+    for ra in run_os_cmd(f"openstack role assignment list --format json"):
+        # will always have a Role (id), but Group or Project fields may be ''
+        role_id, project_id, group_id = ra['Role'], ra['Project'], ra['Group']
+        project_name = projects[project_id]['Name'] if project_id else None
+        group_name = groups[group_id]['Name'] if group_id else None
+        if project_name in project_names and group_name in group_names:
+            role_assignment = RoleAssignment(
+                role=roles[role_id],
+                group = groups[group_id],
+                project = projects[project_id]
+            )
+            role_assignments.append(role_assignment)
+    return role_assignments
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -243,6 +290,7 @@ if __name__ == "__main__":
     parser.add_argument('--groups', default=None, help="comma-separated list of groups to import (default: all)")
     parser.add_argument('--users', default=None, help="comma-separated list of users to import (default: all in 'default' domain)")
     parser.add_argument('--flavors', default=None, help="comma-separated list of flavors to import (default: all)")
+    # for role assignments, only those covered by project AND group should match
     args = parser.parse_args()
 
     # load resource names to import:
@@ -254,6 +302,7 @@ if __name__ == "__main__":
     # run API queries:
     project_objs = {p: load_project(p) for p in sorted(project_names)}
     group_objs = {g: load_group(g) for g in sorted(group_names)}
+    role_assign_objs = load_role_assigments(project_objs, group_objs)
     user_objs = {u: load_user(u) for u in sorted(user_names)}
     flavor_objs = {f: load_flavor(f) for f in sorted(flavor_names)}
 
@@ -263,6 +312,7 @@ if __name__ == "__main__":
             "source":f"{MODULE_SOURCE}",
             "projects":dict((n, p.to_data()) for n, p in project_objs.items()),
             "groups":{g.name: g.description for g in group_objs.values()},
+            "role_assignments": [r.to_data() for r in role_assign_objs],
             "users":{n: u.to_data() for n, u in user_objs.items()},
             "flavors": {n: f.to_data() for n, f in flavor_objs.items()},
         }
@@ -280,6 +330,7 @@ if __name__ == "__main__":
         (
             project_objs.values(),
             group_objs.values(),
+            role_assign_objs,
             user_objs.values(),
             flavor_objs.values(),
         )

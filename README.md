@@ -58,7 +58,8 @@ are additional functionality not supported in openstack-config
   - YES*: quotas
 - YES*: groups
 - YES*: users - **WARNING: passwords will be stored in state!**
-- NEW: role assignments
+- NEW*: role assignments
+    - NB: Only group-based assignments are supported
 - NO: openstack_routers
 - NO: openstack_security_groups
 - YES: openstack_networks_rbac
