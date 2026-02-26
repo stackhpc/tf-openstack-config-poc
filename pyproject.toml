@@ -22,4 +22,4 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.setuptools_scm]
-local_scheme = "node-and-date"
+version_file = "src/tofu_os_cfg/_version.py"
