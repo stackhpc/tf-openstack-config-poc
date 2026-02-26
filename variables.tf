@@ -1,7 +1,7 @@
 variable "projects" {
   description = <<-EOT
     Map of projects. Keys are project name. Values are mappings with keys/values:
-      description: string
+      description: Optional string
       compute_quota: mapping
       network_quota: mapping
       blockstorage_quota: mapping
@@ -9,7 +9,7 @@ variable "projects" {
   EOT
   type = map(
     object({
-      description = string
+      description = optional(string)
       compute_quota = optional(
         object({
           key_pairs            = optional(number)

@@ -82,7 +82,7 @@ def as_dict(obj, keys=[]):
 @dataclass
 class Project:
     name: str
-    description: str
+    description: str | None
     id: str
     compute_quota: dict
     network_quota: dict
@@ -108,14 +108,14 @@ def load_projects(names=None) -> dict[str, Project]:
         names = [n['Name'] for n in run_os_cmd("openstack project list --format json")]
     projects = {}
     for name in sorted(names):
-        proj = run_os_cmd(f"openstack project show {name} --format json")
-        compute_quota = run_os_cmd(f"openstack quota show --compute --format json {proj['id']}")
-        network_quota = run_os_cmd(f"openstack quota show --network --format json {proj['id']}")
-        blockstorage_quota = run_os_cmd(f"openstack quota show --volume --format json {proj['id']}")
+        project = run_os_cmd(f"openstack project show {name} --format json")
+        compute_quota = run_os_cmd(f"openstack quota show --compute --format json {project['id']}")
+        network_quota = run_os_cmd(f"openstack quota show --network --format json {project['id']}")
+        blockstorage_quota = run_os_cmd(f"openstack quota show --volume --format json {project['id']}")
         projects[name] = Project(
-            name=proj['name'],
-            description=proj['description'],
-            id=proj['id'],
+            name=project['name'],
+            description=project['description'],
+            id=project['id'],
             compute_quota=items_to_dict(compute_quota),
             network_quota=items_to_dict(network_quota),
             blockstorage_quota=items_to_dict(blockstorage_quota),
