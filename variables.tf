@@ -63,6 +63,7 @@ variable "users" {
       email: Optional string
       groups: Optional list of group name strings, must be keys from var.groups
       password: Optional string **WARNING** this will be saved in state
+      default_project: Optional string with name of default project, must be key in var.projects
     If password is provided, this must be changed on first use.
   EOT
   type    = map(
@@ -71,6 +72,7 @@ variable "users" {
       email = optional(string)
       groups = optional(list(string))
       password = optional(string)
+      default_project = optional(string)
     })
   )
   default = {}

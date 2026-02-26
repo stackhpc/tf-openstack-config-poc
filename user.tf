@@ -16,7 +16,7 @@ resource "openstack_identity_user_v3" "user" {
     description = each.value.description
     password = each.value.password
     ignore_change_password_upon_first_use = false
-    #default_project_id = openstack_identity_project_v3.project[each.value.default_project].id
+    default_project_id = each.value.default_project == null ? null : openstack_identity_project_v3.project[each.value.default_project].id
     extra = {
       email = each.value.email
     }

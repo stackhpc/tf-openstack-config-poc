@@ -150,14 +150,15 @@ def load_groups(names=None) -> list[str, Group]:
 @dataclass
 class User:
     name: str
-    description: str
+    description: str | None
     id: str
-    email: str
+    email: str | None
     groups: list[str]
+    default_project: str | None
 
     def to_data(self):
         # should return a python datastructure
-        data = as_dict(self, ["name", "description", "email"])
+        data = as_dict(self, ["name", "description", "email", "default_project"])
         data["groups"] = [g['Name'] for g in self.groups]
         return data
 
@@ -177,6 +178,7 @@ def load_users(names=None) -> list[User]:
     if names is None:
         names = [n["Name"] for n in run_os_cmd("openstack user list --format json --domain default")]
     users = {}
+    projects_by_id = {p["ID"]: p for p in run_os_cmd(f"openstack project list --format json")}
     for name in sorted(names):
         user = run_os_cmd(f"openstack user show --format json {name}")
         groups = run_os_cmd(f"openstack group list --format json --user {user['id']}")
@@ -185,6 +187,7 @@ def load_users(names=None) -> list[User]:
                         id=user['id'],
                         email=user['email'],
                         groups=groups,
+                        default_project=None if user['default_project_id'] is None else projects_by_id[user['default_project_id']]['Name']
                         )
     return users
 
