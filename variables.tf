@@ -59,17 +59,17 @@ variable "groups" {
 variable "users" {
   description = <<-EOT
     Map of users. Keys are user names. Values are mappings with keys/values:
-      description: string
-      email: string
-      groups: list of group name strings, must be keys from var.groups
-      password: optional string **WARNING** this will be saved in state
+      description: Optional string
+      email: Optional string
+      groups: Optional list of group name strings, must be keys from var.groups
+      password: Optional string **WARNING** this will be saved in state
     If password is provided, this must be changed on first use.
   EOT
   type    = map(
     object({
-      description = string
-      email = string
-      groups = list(string)
+      description = optional(string)
+      email = optional(string)
+      groups = optional(list(string))
       password = optional(string)
     })
   )
