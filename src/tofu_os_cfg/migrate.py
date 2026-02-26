@@ -200,7 +200,7 @@ class Flavor:
     rx_tx_factor: float
     is_public: bool
     extra_specs: dict
-    projects: list
+    projects: list[dict]
 
     def to_data(self):
         data = as_dict(self, ['ram', 'vcpus', 'disk', 'ephemeral', 'swap', 'rx_tx_factor', 'is_public', 'extra_specs'])
@@ -224,9 +224,9 @@ def load_flavors(names=None) -> dict[str, Flavor]:
     if names is None:
         names = [n["Name"] for n in run_os_cmd("openstack flavor list --format json")]
     flavors = {}
+    projects_by_id = {p["ID"]: p for p in run_os_cmd(f"openstack project list --format json")}
     for name in sorted(names):
         flavor = run_os_cmd(f"openstack flavor show --format json {name}")
-        all_projects = run_os_cmd(f"openstack project list --format json") # TODO: memoise
         flavors[name] = Flavor(
             name = name,
             id = flavor['id'],
@@ -238,7 +238,7 @@ def load_flavors(names=None) -> dict[str, Flavor]:
             rx_tx_factor = flavor['rxtx_factor'],
             is_public = flavor['os-flavor-access:is_public'],
             extra_specs = flavor['properties'],
-            projects = [p for p in all_projects if p['ID'] in flavor['access_project_ids']], # TODO: make stable
+            projects = [] if flavor['access_project_ids'] is None else [projects_by_id[pid] for pid in flavor['access_project_ids']],
         )
     return flavors
 

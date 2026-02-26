@@ -205,4 +205,4 @@ committed, it does not matter.
   venv run `pip install -e path_to_repo`.
 - Changes to the `src/` files are picked up when running `tofu-os-cfg`.
 - Note that the `--output` argument can be used to determine where files are
-generated.
+  generated.
