@@ -22,4 +22,4 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.setuptools_scm]
-local_scheme = "no-local-version"
+local_scheme = "node-and-date"
