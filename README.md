@@ -86,10 +86,10 @@ The "Import?" column refers to support for [importing existing openstack configu
 | Feature           | Supported? | Import?  | Comments |
 | ----------------- | ---------- | -------- | -------- |
 | Domains           | No         | N/A      | Only the default domain is used |
-| Projects          | Yes        | Yes      | keypairs not supported |
+| Projects          | Yes        | Yes      | Keypairs not supported |
 | Groups            | Yes        | Yes      | |
 | Users             | Yes        | Yes      | |
-| Role assignments  | New        | Yes      | |
+| Role assignments  | New        | Yes      | Only groups (not users) can be assigned roles |
 | Routers           | No         | N/A      | |
 | Security groups   | No         | N/A      | |
 | Network RBAC      | Yes        | No       | |
