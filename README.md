@@ -180,6 +180,8 @@ linking the above configuration to the cloud resources.
 Various options can be used to limit which resources are inspected, run
 `tofu-os-cfg --help` to see them.
 
+By default the generated module path will depend on pip-installed package version.
+
 The generated files should be reviewed and if necessary, modified. Note not all
 features currently support migration.
 

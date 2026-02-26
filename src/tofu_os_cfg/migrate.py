@@ -32,7 +32,7 @@ which represents the HCL, then convert it.
 import subprocess, json, pprint, argparse, os, itertools, functools
 from pathlib import Path
 from dataclasses import dataclass
-from . import hcl
+from . import hcl, _version
 
 IMPORT_TEMPLATE="""
 import {{
@@ -40,8 +40,8 @@ import {{
     id = "{tofu_id}"
 }}
 """
-MODULE_SOURCE="../../modules/openstack_config"
-DEBUG=os.getenv('DEBUG', default=False)
+MODULE_SOURCE = "github.com/stackhpc/tofu-openstack-config"
+DEBUG = os.getenv('DEBUG', default=False)
 
 def flatten(lst):
     return list(itertools.chain.from_iterable(lst))
@@ -289,7 +289,20 @@ def load_role_assigments(project_names, group_names):
             role_assignments.append(role_assignment)
     return role_assignments
 
+def get_git_ref():
+    # Exact tag: tuple is only integers
+    if all(isinstance(x, int) for x in _version.__version_tuple__):
+        return f"v{_version.__version__}"
+
+    # Otherwise not on a tag: use commit
+    commit = _version.__commit_id__
+    if commit.startswith("g"):
+        commit = commit[1:]
+    return commit
+
 def main():
+
+    default_module = f"{MODULE_SOURCE}?ref={get_git_ref()}"
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default='main.tf', help="name for created file containing OpenTofu configuration (default: main.tf)")
@@ -299,6 +312,7 @@ def main():
     parser.add_argument('--groups', nargs="+", help="space-separated list of groups to import (default: all)")
     parser.add_argument('--users', nargs="+", help="space-separated list of users to import (default: all in 'default' domain)")
     parser.add_argument('--flavors', nargs="+", help="space-separated list of flavors to import (default: all)")
+    parser.add_argument('--module', default=default_module, help=f"path to provide for opentof module, default {default_module}")
     # for role assignments, only those covered by project AND group should match
     args = parser.parse_args()
 
@@ -312,7 +326,7 @@ def main():
     # create a datastructure with the config in Python form:
     config_py = {
         ("module", "openstack"):{
-            "source":f"{MODULE_SOURCE}",
+            "source":f"{args.module}",
             "projects":{n: p.to_data() for n, p in project_objs.items()},
             "groups":{g.name: g.description for g in group_objs.values()},
             "role_assignments": [r.to_data() for r in role_assign_objs],
