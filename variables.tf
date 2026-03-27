@@ -152,6 +152,43 @@ variable "flavors" {
   default = {}
 }
 
+variable "images"{
+  description = <<-EOT
+        Mapping of image definitions. Key is image name.
+          container_format: Required string
+          disk_format: Required string
+          local_file_path: Optional string
+          image_cache_path: Optional string
+          image_source_url: Optional string
+          image_id: Optional string
+          min_disk_gb: Optional number
+          min_ram_mb: Optional number
+          protected: Optional bool, default false
+          hidden: Optional bool, default false
+          web_download: Optional bool, default false
+          properties: Optional list of string
+          visibility: Optionnal string
+    EOT
+  type = map(
+    object({
+      container_format = string
+      disk_format      = string
+      local_file_path  = optional(string)
+      image_cache_path = optional(string)
+      image_source_url = optional(string)
+      image_id         = optional(string)
+      min_disk_gb      = optional(number)
+      min_ram_mb       = optional(number)
+      protected        = optional(bool, false)
+      hidden           = optional(bool, false)
+      web_download     = optional(bool, false)
+      properties       = optional(list(string))
+      visibility       = optional(string)
+
+    })
+  )
+}
+
 # TODO: more outputs?
 output "projects" {
   #value = {for k, v in openstack_identity_project_v3.project: k => v.id}
