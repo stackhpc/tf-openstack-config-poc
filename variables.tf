@@ -182,7 +182,7 @@ variable "images"{
       protected        = optional(bool, false)
       hidden           = optional(bool, false)
       web_download     = optional(bool, false)
-      properties       = optional(list(string))
+      properties       = optional(map(string))
       visibility       = optional(string)
 
     })
