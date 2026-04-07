@@ -157,7 +157,6 @@ variable "images"{
         Mapping of image definitions. Key is image name.
           container_format: Required string
           disk_format: Required string
-          local_file_path: Optional string
           image_cache_path: Optional string
           image_source_url: Optional string
           image_id: Optional string
@@ -167,13 +166,12 @@ variable "images"{
           hidden: Optional bool, default false
           web_download: Optional bool, default false
           properties: Optional list of string
-          visibility: Optionnal string
+          visibility: Optional string
     EOT
   type = map(
     object({
       container_format = string
       disk_format      = string
-      local_file_path  = optional(string)
       image_cache_path = optional(string)
       image_source_url = optional(string)
       image_id         = optional(string)

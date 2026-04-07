@@ -4,7 +4,6 @@ resource "openstack_images_image_v2" "image" {
     name = each.key
     container_format = each.value.container_format
     disk_format      = each.value.disk_format
-    local_file_path  = lookup(each.value, "local_file_path", null)
     image_cache_path = lookup(each.value, "image_cache_path", null)
     image_source_url = lookup(each.value, "image_source_url", null)
     image_id         = lookup(each.value, "image_id", null)
