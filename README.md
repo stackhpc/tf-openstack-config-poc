@@ -95,7 +95,7 @@ The "Import?" column refers to support for [importing existing openstack configu
 | Network RBAC      | Yes        | No       | |
 | Flavors           | Yes        | Yes      | |
 | Host aggregates   | No         | N/A      | |
-| Images            | No         | N/A      | |
+| Images            | Yes        | No       | Does not support local_file_path for image upload |
 | Image elements    | No         | N/A      | Considered out of scope |
 | Ratings           | No         | N/A      | |
 
@@ -107,9 +107,9 @@ During `tofu apply`:
 
 ```
 │ Error: Provider produced inconsistent result after apply
-│ 
+│
 │ When applying changes to module.roleB.openstack_identity_role_assignment_v3.A, provider "provider[\"registry.opentofu.org/hashicorp/openstack\"]" produced an unexpected new value: root object was present, but now absent.
-│ 
+│
 │ This is a bug in the provider, which should be reported in the provider's own issue tracker.
 ```
 But reapplying fixed it ...

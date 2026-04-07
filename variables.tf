@@ -160,8 +160,8 @@ variable "images"{
           image_cache_path: Optional string
           image_source_url: Optional string
           image_id: Optional string
-          min_disk_gb: Optional number
-          min_ram_mb: Optional number
+          min_disk_gb: Optional number, default 0.
+          min_ram_mb: Optional number, default 0.
           protected: Optional bool, default false
           hidden: Optional bool, default false
           web_download: Optional bool, default false
