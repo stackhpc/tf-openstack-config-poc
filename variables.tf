@@ -117,6 +117,85 @@ variable "network_rbac" {
   default = []
 }
 
+variable "networks" {
+
+  type = map(
+    object({
+      region                = optional(string)
+      shared                = optional(bool, false)
+      external              = optional(bool, false)
+      tentant_id            = optional(string)
+      mtu                   = optional(number)
+      port_security_enabled = optional(bool, true)
+
+      segments = optional(
+        list(object({
+        physical_network = optional(string)
+        network_type     = optional(string)
+        segmentation_id  = optional(number)
+        }))
+      )
+    })
+  )
+  default = {}
+}
+
+variable "subnets" {
+
+  type = map(
+    object({
+      network_id  = string
+      region      = optional(string)
+      cidr        = optional(string)
+      ip_version  = optional(number, 4)
+      tentant_id  = optional(string)
+      gateway_ip  = optional(string)
+      enable_dhcp = optional(bool, true)
+
+      allocation_pool = optional(
+        list(object({
+        start = string
+        end   = string
+        }))
+      )
+    })
+  )
+  default = {}
+}
+
+variable "routers" {
+
+  type = map(
+    object({
+      region              = optional(string)
+      external_network_id = optional(string)
+      tentant_id          = optional(string)
+
+      external_fixed_id = optional(
+        list(object({
+          subnet_id  = optional(string)
+          ip_address = optional(string)
+        }))
+      )
+    })
+  )
+  default = {}
+}
+
+variable "router_interfaces" {
+
+  type = map(
+    object({
+      router_id     = string
+      region        = optional(string)
+      subnet_id     = optional(string)
+      port_id       = optional(string)
+      force_destroy = optional(bool, false)
+    })
+  )
+  default = {}
+}
+
 variable "flavors" {
   description = <<-EOT
         Mapping of flavor definitions. Key is flavor name, and must be quoted
@@ -185,6 +264,7 @@ variable "images"{
 
     })
   )
+  default = {}
 }
 
 # TODO: more outputs?

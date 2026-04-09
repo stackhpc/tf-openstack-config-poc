@@ -88,13 +88,13 @@ class Project:
     network_quota: dict
     blockstorage_quota: dict
     config_keys = ['description', 'compute_quota', 'network_quota', 'blockstorage_quota']
-    
+
     def to_data(self):
         # should return a python datastructure
         return as_dict(self, self.config_keys)
-    
+
     def to_import(self):
-        
+
         blocks = [
             fmt_import(f'module.openstack.openstack_identity_project_v3.project["{self.name}"]', self.id),
             fmt_import(f'module.openstack.openstack_compute_quotaset_v2.project["{self.name}"]', f"{self.id}/RegionOne"), # TODO: FIX REGION?
@@ -102,7 +102,7 @@ class Project:
             fmt_import(f'module.openstack.openstack_blockstorage_quotaset_v3.project["{self.name}"]', f"{self.id}/RegionOne"), # TODO: FIX REGION?
         ]
         return blocks
-    
+
 def load_projects(names=None) -> dict[str, Project]:
     if names is None:
         names = [n['Name'] for n in run_os_cmd("openstack project list --format json")]
@@ -127,13 +127,13 @@ class Group:
     name: str
     description: str
     id: str
-        
+
     def to_import(self):
         blocks = [
             fmt_import(f'module.openstack.openstack_identity_group_v3.group["{self.name}"]', self.id)
         ]
         return blocks
-    
+
 def load_groups(names=None) -> list[str, Group]:
     if names is None:
         names = [n["Name"] for n in run_os_cmd("openstack group list --format json")]
@@ -173,7 +173,7 @@ class User:
             tofu_id = f'{self.id}/{group_id}'
             blocks.append(fmt_import(address, tofu_id))
         return blocks
-    
+
 def load_users(names=None) -> list[User]:
     if names is None:
         names = [n["Name"] for n in run_os_cmd("openstack user list --format json --domain default")]
@@ -209,7 +209,7 @@ class Flavor:
         data = as_dict(self, ['ram', 'vcpus', 'disk', 'ephemeral', 'swap', 'rx_tx_factor', 'is_public', 'extra_specs'])
         data["projects"] = [p["Name"] for p in self.projects]
         return data
-    
+
     def to_import(self):
         blocks = [
             fmt_import(f'module.openstack.openstack_compute_flavor_v2.flavor["{self.name}"]', self.id)
@@ -292,6 +292,76 @@ def load_role_assigments(project_names, group_names):
             role_assignments.append(role_assignment)
     return role_assignments
 
+@dataclass
+class Network:
+    name: str
+    id: str
+    region: str | None
+    shared: bool
+    external: bool
+    tenant_id: str | None
+    mtu: int | None
+    port_security_enabled: bool
+    segments: list[dict]
+
+    def to_data(self):
+        data = as_dict(self, [
+            "region",
+            "shared",
+            "external",
+            "tenant_id",
+            "mtu",
+            "port_security_enabled",
+            "segments",
+        ])
+        return data
+
+    def to_import(self):
+        return [
+            fmt_import(
+                f'module.openstack.openstack_networking_network_v2.network["{self.name}"]',
+                self.id
+            )
+        ]
+
+def load_networks(names=None) -> dict[str, Network]:
+    if names is None:
+        names = [n["name"] for n in run_os_cmd("openstack network list --format json")]
+
+    networks = {}
+
+    projects_by_id = {
+        p["ID"]: p for p in run_os_cmd("openstack project list --format json")
+    }
+
+    for name in sorted(names):
+        net = run_os_cmd(f"openstack network show --format json {name}")
+
+        # Build segments (Flavor-style: normalize structure)
+        segment = {
+            "physical_network": net.get("provider:physical_network"),
+            "network_type": net.get("provider:network_type"),
+            "segmentation_id": net.get("provider:segmentation_id"),
+        }
+
+        segments = []
+        if any(v is not None for v in segment.values()):
+            segments.append(segment)
+
+        networks[name] = Network(
+            name=name,
+            id=net["id"],
+            region=None,
+            shared=net.get("shared", False),
+            external=net.get("router:external", False),
+            tenant_id=None if net.get("project_id") is None else projects_by_id[net["project_id"]],
+            mtu=net.get("mtu"),
+            port_security_enabled=net.get("port_security_enabled", True),
+            segments=segments,
+        )
+
+    return networks
+
 def get_git_ref():
     # Exact tag: tuple is only integers
     if all(isinstance(x, int) for x in _version.__version_tuple__):
@@ -316,6 +386,7 @@ def main():
     parser.add_argument('--users', nargs="+", help="space-separated list of users to import (default: all in 'default' domain)")
     parser.add_argument('--flavors', nargs="+", help="space-separated list of flavors to import (default: all)")
     parser.add_argument('--module', default=default_module, help=f"path to provide for opentof module, default {default_module}")
+    parser.add_argument('--networks', nargs="+", help="space-separated list of networks to import (default: all)")
     # for role assignments, only those covered by project AND group should match
     args = parser.parse_args()
 
@@ -325,6 +396,7 @@ def main():
     role_assign_objs = load_role_assigments(project_objs, group_objs)
     user_objs = load_users(args.users)
     flavor_objs = load_flavors(args.flavors)
+    network_objs = load_networks(args.networks)
 
     # create a datastructure with the config in Python form:
     config_py = {
@@ -335,6 +407,7 @@ def main():
             "role_assignments": [r.to_data() for r in role_assign_objs],
             "users":{n: u.to_data() for n, u in user_objs.items()},
             "flavors": {n: f.to_data() for n, f in flavor_objs.items()},
+            "networks": {n: nobj.to_data() for n, nobj in network_objs.items()},
         }
     }
 
@@ -353,6 +426,7 @@ def main():
             role_assign_objs,
             user_objs.values(),
             flavor_objs.values(),
+            network_objs.values(),
         )
     )
     import_path = Path(args.output).joinpath(args.imports)
