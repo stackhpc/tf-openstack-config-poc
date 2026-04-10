@@ -133,7 +133,7 @@ variable "networks" {
         physical_network = optional(string)
         network_type     = optional(string)
         segmentation_id  = optional(number)
-        }))
+        })), []
       )
     })
   )
@@ -141,6 +141,8 @@ variable "networks" {
 }
 
 variable "subnets" {
+  # TODO: make child of network, and automatically set network_id. See e.g. stuff in projects.tf
+  # TODO: make cidr or subnetpool_id required via validation
 
   type = map(
     object({
@@ -156,7 +158,7 @@ variable "subnets" {
         list(object({
         start = string
         end   = string
-        }))
+        })), []
       )
     })
   )
