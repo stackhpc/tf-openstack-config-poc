@@ -146,13 +146,18 @@ variable "subnets" {
 
   type = map(
     object({
-      network_id  = string
-      region      = optional(string)
-      cidr        = optional(string)
-      ip_version  = optional(number, 4)
-      tentant_id  = optional(string)
-      gateway_ip  = optional(string)
-      enable_dhcp = optional(bool, true)
+      network_id           = string
+      region               = optional(string)
+      cidr                 = optional(string)
+      ip_version           = optional(number, 4)
+      tentant_id           = optional(string)
+      gateway_ip           = optional(string)
+      enable_dhcp          = optional(bool, true)
+      dns_nameservers      = optional(list(string), [])
+      dns_publish_fixed_ip = optional(bool, false)
+      no_gateway           = optional(bool, false)
+      service_types        = optional(list(string), [])
+      tags                 = optional(list(string), [])
 
       allocation_pool = optional(
         list(object({
@@ -166,29 +171,28 @@ variable "subnets" {
 }
 
 variable "routers" {
-
   type = map(
     object({
       region              = optional(string)
       external_network_id = optional(string)
       tentant_id          = optional(string)
+      tags                = optional(list(string), [])
 
-      external_fixed_id = optional(
+      external_fixed_ip = optional(
         list(object({
           subnet_id  = optional(string)
           ip_address = optional(string)
-        }))
+        })), []
       )
     })
   )
   default = {}
 }
 
-variable "router_interfaces" {
-
+variable "router_interfaces"{
   type = map(
     object({
-      router_id     = string
+      router_id     = optional(string)
       region        = optional(string)
       subnet_id     = optional(string)
       port_id       = optional(string)
@@ -287,3 +291,31 @@ output "role_assignments" {
 # output "debug" {
 #     value = {for v in flatten([for rbac in var.network_rbac: [for project in rbac.projects: {rbac=rbac, project=project}]]): "${v.rbac.network}:${v.project}" => v}
 # }
+
+output "subnet" {
+  value = {
+    for k, v in openstack_networking_subnet_v2.subnets :
+    k => {
+      id         = v.id
+      gateway_ip = v.gateway_ip
+    }
+  }
+}
+
+output "network" {
+  value = {
+    for k, v in openstack_networking_network_v2.networks :
+    k => {
+      id = v.id
+    }
+  }
+}
+
+output "router" {
+  value = {
+    for k, v in openstack_networking_router_v2.routers :
+    k => {
+      id = v.id
+    }
+  }
+}

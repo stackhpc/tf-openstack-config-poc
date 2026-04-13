@@ -1,4 +1,4 @@
-resource "openstack_networking_network_v2" "network" {
+resource "openstack_networking_network_v2" "networks" {
     for_each = var.networks
 
     name                  = each.key
@@ -19,37 +19,42 @@ resource "openstack_networking_network_v2" "network" {
     }
 }
 
-resource "openstack_networking_subnet_v2" "subnet" {
+resource "openstack_networking_subnet_v2" "subnets" {
     for_each = var.subnets
 
-    name            = each.key
-    network_id      = each.value.network_id
-    region          = lookup(each.value, "region", null)
-    cidr            = lookup(each.value, "cidr", null)
-    ip_version      = lookup(each.value, "ip_version", 4) #default can be 4 or 6
-    tenant_id       = lookup(each.value, "tenant_id", null)
-    gateway_ip      = lookup(each.value, "gateway_ip", null)
-    enable_dhcp     = lookup(each.value, "enable_dhcp", true)
+    name                 = each.key
+    network_id           = each.value.network_id
+    region               = lookup(each.value, "region", null)
+    cidr                 = lookup(each.value, "cidr", null)
+    ip_version           = lookup(each.value, "ip_version", 4) #default can be 4 or 6
+    tenant_id            = lookup(each.value, "tenant_id", null)
+    gateway_ip           = lookup(each.value, "gateway_ip", null)
+    enable_dhcp          = lookup(each.value, "enable_dhcp", true)
+    dns_nameservers      = lookup(each.value, "dns_nameservers", [])
+    dns_publish_fixed_ip = lookup(each.value, "dns_publish_fixed_ip", false)
+    service_types        = lookup(each.value, "service_types", [])
+    tags                 = lookup(each.value, "tags", [])
 
     dynamic "allocation_pool" {
         for_each = lookup(each.value, "allocation_pool", [])
         content {
             start = allocation_pool.value.start
-            end   = allocation_pool.validation.end
+            end   = allocation_pool.value.end
         }
     }
 }
 
-resource "openstack_networking_router_v2" "router" {
+resource "openstack_networking_router_v2" "routers" {
     for_each = var.routers
 
     name                = each.key
     region              = lookup(each.value, "region", null)
     external_network_id = lookup(each.value, "external_network_id", null)
     tenant_id           = lookup(each.value, "tenant_id", null)
+    tags                = lookup(each.value, "tags", [])
 
     dynamic "external_fixed_ip" {
-        for_each = lookup(each.value, "external_fixed_ip")
+        for_each = lookup(each.value, "external_fixed_ip", [])
         content {
             subnet_id = lookup(external_fixed_ip.value, "subnet_id", null)
             ip_address = lookup(external_fixed_ip.value, "ip_address", null)
@@ -57,7 +62,7 @@ resource "openstack_networking_router_v2" "router" {
     }
 }
 
-resource "openstack_networking_router_interface_v2" "router_interface" {
+resource "openstack_networking_router_interface_v2" "router_interfaces" {
     for_each = var.router_interfaces
 
     router_id     = each.value.router_id
