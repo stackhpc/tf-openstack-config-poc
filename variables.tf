@@ -157,7 +157,6 @@ variable "subnets" {
       enable_dhcp          = optional(bool, true)
       dns_nameservers      = optional(list(string), [])
       dns_publish_fixed_ip = optional(bool, false)
-      no_gateway           = optional(bool, false)
       service_types        = optional(list(string), [])
       subnetpool_id        = optional(string)
       no_gateway           = optional(bool)
