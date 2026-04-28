@@ -157,7 +157,6 @@ variable "subnets" {
       enable_dhcp          = optional(bool, true)
       dns_nameservers      = optional(list(string), [])
       dns_publish_fixed_ip = optional(bool, false)
-      no_gateway           = optional(bool, false)
       service_types        = optional(list(string), [])
       subnetpool_id        = optional(string)
       no_gateway           = optional(bool)
@@ -276,6 +275,24 @@ variable "images"{
     })
   )
   default = {}
+}
+
+variable "shares"{
+
+  type = map(
+    object({
+      share_proto       = string
+      size              = number
+      region            = optional(string)
+      description       = optional(string)
+      share_type        = optional(string)
+      snapshot_id       = optional(string)
+      is_public         = optional(bool, false)
+      metadata          = optional(string)
+      shared_network_id = optional(string)
+      availability_zone = optional(string)
+    })
+  )
 }
 
 # TODO: more outputs?
