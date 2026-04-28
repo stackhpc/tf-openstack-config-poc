@@ -293,6 +293,7 @@ variable "shares"{
       availability_zone = optional(string)
     })
   )
+  default = {}
 }
 
 # TODO: more outputs?
