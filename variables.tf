@@ -289,7 +289,7 @@ variable "shares"{
       snapshot_id       = optional(string)
       is_public         = optional(bool, false)
       metadata          = optional(string)
-      shared_network_id = optional(string)
+      share_network_id  = optional(string)
       availability_zone = optional(string)
     })
   )
