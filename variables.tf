@@ -124,7 +124,7 @@ variable "networks" {
       region                = optional(string)
       shared                = optional(bool, false)
       external              = optional(bool, false)
-      admin_state_up        = optional(bool, false)
+      admin_state_up        = optional(bool)
       tentant_id            = optional(string)
       mtu                   = optional(number)
       port_security_enabled = optional(bool, true)
@@ -178,7 +178,7 @@ variable "routers" {
     object({
       region              = optional(string)
       external_network_id = optional(string)
-      admin_state_up      = optional(bool, false)
+      admin_state_up      = optional(bool)
       tentant_id          = optional(string)
       tags                = optional(list(string), [])
 

@@ -5,7 +5,7 @@ resource "openstack_networking_network_v2" "networks" {
     region                = lookup(each.value, "region", null)
     shared                = lookup(each.value, "shared", false)
     external              = lookup(each.value, "external", false)
-    admin_state_up        = lookup(each.value, "admin_state_up", false)
+    admin_state_up        = lookup(each.value, "admin_state_up", null)
     tenant_id             = lookup(each.value, "tenant_id", null)
     mtu                   = lookup(each.value, "mtu", null)
     port_security_enabled = lookup(each.value, "port_security_enabled", true)
@@ -54,7 +54,7 @@ resource "openstack_networking_router_v2" "routers" {
     name                = each.key
     region              = lookup(each.value, "region", null)
     external_network_id = lookup(each.value, "external_network_id", null)
-    admin_state_up      = lookup(each.value, "admin_state_up", false)
+    admin_state_up      = lookup(each.value, "admin_state_up", null)
     tenant_id           = lookup(each.value, "tenant_id", null)
     tags                = lookup(each.value, "tags", [])
 
