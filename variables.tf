@@ -206,6 +206,31 @@ variable "router_interfaces"{
   default = {}
 }
 
+variable "portal_internals" {
+
+  type = map(
+    object({
+      name                  = string
+      region                = optional(string)
+      shared                = optional(bool, false)
+      external              = optional(bool, false)
+      admin_state_up        = optional(bool, false)
+      mtu                   = optional(number)
+      port_security_enabled = optional(bool, true)
+      tags                  = optional(list(string), [])
+
+      segments = optional(
+        list(object({
+        physical_network = optional(string)
+        network_type     = optional(string)
+        segmentation_id  = optional(number)
+        })), []
+      )
+    })
+  )
+  default = {}
+}
+
 variable "flavors" {
   description = <<-EOT
         Mapping of flavor definitions. Key is flavor name, and must be quoted

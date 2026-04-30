@@ -76,3 +76,26 @@ resource "openstack_networking_router_interface_v2" "router_interfaces" {
     port_id       = lookup(each.value, "port_id", null)
     force_destroy = lookup(each.value, "force_destroy", false)
 }
+
+resource "openstack_networking_network_v2" "portal_internals" {
+    for_each = var.portal_internals
+
+    tenant_id             = each.key
+    name                  = each.value.name
+    region                = lookup(each.value, "region", null)
+    shared                = lookup(each.value, "shared", false)
+    external              = lookup(each.value, "external", false)
+    admin_state_up        = lookup(each.value, "admin_state_up", false)
+    mtu                   = lookup(each.value, "mtu", null)
+    port_security_enabled = lookup(each.value, "port_security_enabled", true)
+    tags                  = lookup(each.value, "tags", [])
+
+    dynamic "segments" {
+        for_each = lookup(each.value, "segments", [])
+        content {
+            physical_network = lookup(segments.value, "physical_network", null)
+            network_type     = lookup(segments.value, "network_type", null)
+            segmentation_id  = lookup(segments.value, "segmentation_id", null)
+        }
+    }
+}
