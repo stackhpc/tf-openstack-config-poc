@@ -178,6 +178,8 @@ variable "routers" {
     object({
       region              = optional(string)
       external_network_id = optional(string)
+      external_subnet_ids = optional(list(string), [])
+      enable_snat         = optional(bool)
       admin_state_up      = optional(bool, false)
       tentant_id          = optional(string)
       tags                = optional(list(string), [])
@@ -196,7 +198,6 @@ variable "routers" {
 variable "router_interfaces"{
   type = map(
     object({
-      router_id     = optional(string)
       region        = optional(string)
       subnet_id     = optional(string)
       port_id       = optional(string)
@@ -245,7 +246,7 @@ variable "portal_internal_subnets" {
       gateway_ip           = optional(string)
       enable_dhcp          = optional(bool, true)
       dns_nameservers      = optional(list(string), [])
-      dns_publish_fixed_ip = optional(bool, false)
+      dns_publish_fixed_ip = optional(bool)
       service_types        = optional(list(string), [])
       subnetpool_id        = optional(string)
       no_gateway           = optional(bool)
@@ -257,6 +258,40 @@ variable "portal_internal_subnets" {
         end   = string
         })), []
       )
+    })
+  )
+  default = {}
+}
+
+variable "portal_routers" {
+  type = map(
+    object({
+      name                = string
+      region              = optional(string)
+      external_network_id = optional(string)
+      external_subnet_ids = optional(list(string), [])
+      enable_snat         = optional(bool)
+      admin_state_up      = optional(bool, false)
+      tags                = optional(list(string), [])
+
+      external_fixed_ip = optional(
+        list(object({
+          subnet_id  = optional(string)
+          ip_address = optional(string)
+        })), []
+      )
+    })
+  )
+  default = {}
+}
+
+variable "portal_router_interfaces"{
+  type = map(
+    object({
+      region        = optional(string)
+      subnet_id     = optional(string)
+      port_id       = optional(string)
+      force_destroy = optional(bool, false)
     })
   )
   default = {}
@@ -393,6 +428,24 @@ output "network" {
 output "router" {
   value = {
     for k, v in openstack_networking_router_v2.routers :
+    k => {
+      id = v.id
+    }
+  }
+}
+
+output "portal_internal_network" {
+  value = {
+    for k, v in openstack_networking_network_v2.portal_internal_networks :
+    k => {
+      id = v.id
+    }
+  }
+}
+
+output "portal_router" {
+  value = {
+    for k, v in openstack_networking_router_v2.portal_routers :
     k => {
       id = v.id
     }

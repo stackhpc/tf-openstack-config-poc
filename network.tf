@@ -54,6 +54,8 @@ resource "openstack_networking_router_v2" "routers" {
     name                = each.key
     region              = lookup(each.value, "region", null)
     external_network_id = lookup(each.value, "external_network_id", null)
+    external_subnet_ids = lookup(each.value, "external_subnet_id", [])
+    enable_snat         = lookup(each.value, "enable_snat", null)
     admin_state_up      = lookup(each.value, "admin_state_up", false)
     tenant_id           = lookup(each.value, "tenant_id", null)
     tags                = lookup(each.value, "tags", [])
@@ -78,7 +80,7 @@ resource "openstack_networking_router_interface_v2" "router_interfaces" {
 }
 
 resource "openstack_networking_network_v2" "portal_internal_networks" {
-    for_each = var.portal_internals
+    for_each = var.portal_internal_networks
 
     tenant_id             = each.key
     name                  = each.value.name
@@ -101,7 +103,7 @@ resource "openstack_networking_network_v2" "portal_internal_networks" {
 }
 
 resource "openstack_networking_subnet_v2" "portal_internal_subnets" {
-    for_each = var.subnets
+    for_each = var.portal_internal_subnets
 
     tenant_id            = each.key
     name                 = each.value.name
@@ -112,7 +114,7 @@ resource "openstack_networking_subnet_v2" "portal_internal_subnets" {
     gateway_ip           = lookup(each.value, "gateway_ip", null)
     enable_dhcp          = lookup(each.value, "enable_dhcp", true)
     dns_nameservers      = lookup(each.value, "dns_nameservers", [])
-    dns_publish_fixed_ip = lookup(each.value, "dns_publish_fixed_ip", false)
+    dns_publish_fixed_ip = lookup(each.value, "dns_publish_fixed_ip", null)
     service_types        = lookup(each.value, "service_types", [])
     subnetpool_id        = lookup(each.value, "subnetpool_id", null)
     no_gateway           = lookup(each.value, "no_gateway", null)
@@ -125,4 +127,36 @@ resource "openstack_networking_subnet_v2" "portal_internal_subnets" {
             end   = allocation_pool.value.end
         }
     }
+}
+
+resource "openstack_networking_router_v2" "portal_routers" {
+    for_each = var.portal_routers
+
+    tenant_id           = each.key
+    name                = each.value.name
+    region              = lookup(each.value, "region", null)
+    external_network_id = lookup(each.value, "external_network_id", null)
+    external_subnet_ids = lookup(each.value, "external_subnet_id", [])
+    enable_snat         = lookup(each.value, "enable_snat", null)
+    admin_state_up      = lookup(each.value, "admin_state_up", false)
+
+    tags                = lookup(each.value, "tags", [])
+
+    dynamic "external_fixed_ip" {
+        for_each = lookup(each.value, "external_fixed_ip", [])
+        content {
+            subnet_id = lookup(external_fixed_ip.value, "subnet_id", null)
+            ip_address = lookup(external_fixed_ip.value, "ip_address", null)
+        }
+    }
+}
+
+resource "openstack_networking_router_interface_v2" "portal_router_interfaces" {
+    for_each = var.portal_router_interfaces
+
+    router_id     = each.value.router_id
+    region        = lookup(each.value, "region", null)
+    subnet_id     = lookup(each.value, "subnet_id", null)
+    port_id       = lookup(each.value, "port_id", null)
+    force_destroy = lookup(each.value, "force_destroy", false)
 }
