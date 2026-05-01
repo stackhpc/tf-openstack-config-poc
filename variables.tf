@@ -206,7 +206,7 @@ variable "router_interfaces"{
   default = {}
 }
 
-variable "portal_internals" {
+variable "portal_internal_networks" {
 
   type = map(
     object({
@@ -224,6 +224,37 @@ variable "portal_internals" {
         physical_network = optional(string)
         network_type     = optional(string)
         segmentation_id  = optional(number)
+        })), []
+      )
+    })
+  )
+  default = {}
+}
+
+variable "portal_internal_subnets" {
+  # TODO: make child of network, and automatically set network_id. See e.g. stuff in projects.tf
+  # TODO: make cidr or subnetpool_id required via validation
+
+  type = map(
+    object({
+      name                 = string
+      network_id           = string
+      region               = optional(string)
+      cidr                 = optional(string)
+      ip_version           = optional(number, 4)
+      gateway_ip           = optional(string)
+      enable_dhcp          = optional(bool, true)
+      dns_nameservers      = optional(list(string), [])
+      dns_publish_fixed_ip = optional(bool, false)
+      service_types        = optional(list(string), [])
+      subnetpool_id        = optional(string)
+      no_gateway           = optional(bool)
+      tags                 = optional(list(string), [])
+
+      allocation_pool = optional(
+        list(object({
+        start = string
+        end   = string
         })), []
       )
     })

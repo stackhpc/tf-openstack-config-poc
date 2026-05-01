@@ -77,7 +77,7 @@ resource "openstack_networking_router_interface_v2" "router_interfaces" {
     force_destroy = lookup(each.value, "force_destroy", false)
 }
 
-resource "openstack_networking_network_v2" "portal_internals" {
+resource "openstack_networking_network_v2" "portal_internal_networks" {
     for_each = var.portal_internals
 
     tenant_id             = each.key
@@ -96,6 +96,33 @@ resource "openstack_networking_network_v2" "portal_internals" {
             physical_network = lookup(segments.value, "physical_network", null)
             network_type     = lookup(segments.value, "network_type", null)
             segmentation_id  = lookup(segments.value, "segmentation_id", null)
+        }
+    }
+}
+
+resource "openstack_networking_subnet_v2" "portal_internal_subnets" {
+    for_each = var.subnets
+
+    tenant_id            = each.key
+    name                 = each.value.name
+    network_id           = each.value.network_id
+    region               = lookup(each.value, "region", null)
+    cidr                 = lookup(each.value, "cidr", null)
+    ip_version           = lookup(each.value, "ip_version", 4) #default can be 4 or 6
+    gateway_ip           = lookup(each.value, "gateway_ip", null)
+    enable_dhcp          = lookup(each.value, "enable_dhcp", true)
+    dns_nameservers      = lookup(each.value, "dns_nameservers", [])
+    dns_publish_fixed_ip = lookup(each.value, "dns_publish_fixed_ip", false)
+    service_types        = lookup(each.value, "service_types", [])
+    subnetpool_id        = lookup(each.value, "subnetpool_id", null)
+    no_gateway           = lookup(each.value, "no_gateway", null)
+    tags                 = lookup(each.value, "tags", [])
+
+    dynamic "allocation_pool" {
+        for_each = lookup(each.value, "allocation_pool", [])
+        content {
+            start = allocation_pool.value.start
+            end   = allocation_pool.value.end
         }
     }
 }
