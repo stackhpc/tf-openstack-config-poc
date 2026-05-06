@@ -136,7 +136,7 @@ resource "openstack_networking_router_v2" "portal_routers" {
     name                = each.value.name
     region              = lookup(each.value, "region", null)
     external_network_id = lookup(each.value, "external_network_id", null)
-    external_subnet_ids = lookup(each.value, "external_subnet_id", [])
+    external_subnet_ids = lookup(each.value, "external_subnet_id", null)
     enable_snat         = lookup(each.value, "enable_snat", null)
     admin_state_up      = lookup(each.value, "admin_state_up", false)
 
@@ -151,10 +151,11 @@ resource "openstack_networking_router_v2" "portal_routers" {
     }
 }
 
-resource "openstack_networking_router_interface_v2" "portal_router_interfaces" {
-    for_each = var.portal_router_interfaces
+resource "openstack_networking_router_interface_v2" "portal_routers" {
+    for_each = {for tenant_id, rou in var.portal_routers: tenant_id => rou.router_interface if rou.router_interface !=null}
 
-    router_id     = each.value.router_id
+
+    router_id     = openstack_networking_router_v2.portal_routers[each.key].id
     region        = lookup(each.value, "region", null)
     subnet_id     = lookup(each.value, "subnet_id", null)
     port_id       = lookup(each.value, "port_id", null)

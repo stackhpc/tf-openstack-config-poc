@@ -269,7 +269,7 @@ variable "portal_routers" {
       name                = string
       region              = optional(string)
       external_network_id = optional(string)
-      external_subnet_ids = optional(list(string), [])
+      external_subnet_ids = optional(list(string), null)
       enable_snat         = optional(bool)
       admin_state_up      = optional(bool, false)
       tags                = optional(list(string), [])
@@ -280,19 +280,17 @@ variable "portal_routers" {
           ip_address = optional(string)
         })), []
       )
-    })
-  )
-  default = {}
-}
 
-variable "portal_router_interfaces"{
-  type = map(
-    object({
-      region        = optional(string)
-      subnet_id     = optional(string)
-      port_id       = optional(string)
-      force_destroy = optional(bool, false)
+      router_interface = optional(
+        object({
+        region        = optional(string)
+        subnet_id     = optional(string)
+        port_id       = optional(string)
+        force_destroy = optional(bool, false)
+      })
+    )
     })
+
   )
   default = {}
 }
