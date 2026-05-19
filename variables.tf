@@ -125,7 +125,7 @@ variable "networks" {
       shared                = optional(bool, false)
       external              = optional(bool, false)
       admin_state_up        = optional(bool)
-      tentant_id            = optional(string)
+      tenant_id            = optional(string)
       mtu                   = optional(number)
       port_security_enabled = optional(bool, true)
       tags                  = optional(list(string), [])
@@ -152,7 +152,7 @@ variable "subnets" {
       region               = optional(string)
       cidr                 = optional(string)
       ip_version           = optional(number, 4)
-      tentant_id           = optional(string)
+      tenant_id           = optional(string)
       gateway_ip           = optional(string)
       enable_dhcp          = optional(bool, true)
       dns_nameservers      = optional(list(string), [])
@@ -180,7 +180,7 @@ variable "routers" {
       region              = optional(string)
       external_network_id = optional(string)
       admin_state_up      = optional(bool)
-      tentant_id          = optional(string)
+      tenant_id          = optional(string)
       tags                = optional(list(string), [])
 
       external_fixed_ip = optional(
