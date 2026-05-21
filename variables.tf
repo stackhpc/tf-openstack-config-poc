@@ -125,6 +125,7 @@ variable "networks" {
       shared                = optional(bool, false)
       external              = optional(bool, false)
       admin_state_up        = optional(bool)
+      project = optional(string)
       tenant_id             = optional(string)
       mtu                   = optional(number)
       port_security_enabled = optional(bool, true)
@@ -148,10 +149,12 @@ variable "subnets" {
 
   type = map(
     object({
-      network_id           = string
+      network_id           = optional(string)
+      network              = optional(string)
       region               = optional(string)
       cidr                 = optional(string)
       ip_version           = optional(number, 4)
+      project              = optional(string)
       tenant_id            = optional(string)
       gateway_ip           = optional(string)
       enable_dhcp          = optional(bool, true)
@@ -179,11 +182,13 @@ variable "routers" {
       region              = optional(string)
       external_network_id = optional(string)
       admin_state_up      = optional(bool)
-      tenant_id          = optional(string)
+      project             = optional(string)
+      tenant_id           = optional(string)
       tags                = optional(list(string), [])
 
       external_fixed_ip = optional(
         list(object({
+          subnet     = optional(string)
           subnet_id  = optional(string)
           ip_address = optional(string)
         })), []
@@ -196,6 +201,8 @@ variable "routers" {
 variable "router_interfaces"{
   type = map(
     object({
+      router        = optional(string)
+      subnet        = optional(string)
       router_id     = optional(string)
       region        = optional(string)
       subnet_id     = optional(string)
