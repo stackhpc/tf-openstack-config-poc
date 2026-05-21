@@ -6,7 +6,7 @@ resource "openstack_networking_network_v2" "networks" {
     shared                = lookup(each.value, "shared", false)
     external              = lookup(each.value, "external", false)
     admin_state_up        = lookup(each.value, "admin_state_up", null)
-    tenant_id             = lookup(each.value, "tenant_id", null)
+    tenant_id             = (each.value.project != null ? openstack_identity_project_v3.project[each.value.project].id : each.value.tenant_id)
     mtu                   = lookup(each.value, "mtu", null)
     port_security_enabled = lookup(each.value, "port_security_enabled", true)
     tags                  = lookup(each.value, "tags", [])
@@ -25,11 +25,11 @@ resource "openstack_networking_subnet_v2" "subnets" {
     for_each = var.subnets
 
     name                 = each.key
-    network_id           = each.value.network_id
+    network_id           = (each.value.network != null ? openstack_networking_network_v2.networks[each.value.network].id : each.value.network_id )
     region               = lookup(each.value, "region", null)
     cidr                 = lookup(each.value, "cidr", null)
     ip_version           = lookup(each.value, "ip_version", 4) #default can be 4 or 6
-    tenant_id            = lookup(each.value, "tenant_id", null)
+    tenant_id            = (each.value.project != null ? openstack_identity_project_v3.project[each.value.project].id : each.value.tenant_id )
     gateway_ip           = lookup(each.value, "gateway_ip", null)
     enable_dhcp          = lookup(each.value, "enable_dhcp", true)
     dns_nameservers      = lookup(each.value, "dns_nameservers", [])
@@ -55,14 +55,14 @@ resource "openstack_networking_router_v2" "routers" {
     region              = lookup(each.value, "region", null)
     external_network_id = lookup(each.value, "external_network_id", null)
     admin_state_up      = lookup(each.value, "admin_state_up", null)
-    tenant_id           = lookup(each.value, "tenant_id", null)
+    tenant_id           = (each.value.project != null ? openstack_identity_project_v3.project[each.value.project].id : each.value.tenant_id )
     tags                = lookup(each.value, "tags", [])
 
     dynamic "external_fixed_ip" {
         for_each = lookup(each.value, "external_fixed_ip", [])
         content {
-            subnet_id = lookup(external_fixed_ip.value, "subnet_id", null)
-            ip_address = lookup(external_fixed_ip.value, "ip_address", null)
+          subnet_id  = (each.value.subnet != null ? openstack_networking_subnet_v2.subnets[each.value.subnet].id : each.value.subnet_id)
+          ip_address = lookup(external_fixed_ip.value, "ip_address", null)
         }
     }
 }
@@ -70,9 +70,9 @@ resource "openstack_networking_router_v2" "routers" {
 resource "openstack_networking_router_interface_v2" "router_interfaces" {
     for_each = var.router_interfaces
 
-    router_id     = each.value.router_id
+    router_id     = (each.value.router != null ? openstack_networking_router_v2.routers[each.value.router].id : each.value.router_id)
     region        = lookup(each.value, "region", null)
-    subnet_id     = lookup(each.value, "subnet_id", null)
+    subnet_id     = (each.value.subnet != null ? openstack_networking_subnet_v2.subnets[each.value.subnet].id : each.value.subnet_id)
     port_id       = lookup(each.value, "port_id", null)
     force_destroy = lookup(each.value, "force_destroy", false)
 }
