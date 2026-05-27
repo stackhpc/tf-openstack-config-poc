@@ -1,7 +1,7 @@
 resource "openstack_networking_network_v2" "networks" {
     for_each = var.networks
 
-    name                  = each.key
+    name                  = each.value.name
     region                = lookup(each.value, "region", null)
     shared                = lookup(each.value, "shared", false)
     external              = lookup(each.value, "external", false)
@@ -24,7 +24,7 @@ resource "openstack_networking_network_v2" "networks" {
 resource "openstack_networking_subnet_v2" "subnets" {
     for_each = var.subnets
 
-    name                 = each.key
+    name                 = each.value.name
     network_id           = (each.value.network != null ? openstack_networking_network_v2.networks[each.value.network].id : each.value.network_id )
     region               = lookup(each.value, "region", null)
     cidr                 = lookup(each.value, "cidr", null)
@@ -51,7 +51,7 @@ resource "openstack_networking_subnet_v2" "subnets" {
 resource "openstack_networking_router_v2" "routers" {
     for_each = var.routers
 
-    name                = each.key
+    name                = each.value.name
     region              = lookup(each.value, "region", null)
     external_network_id = lookup(each.value, "external_network_id", null)
     admin_state_up      = lookup(each.value, "admin_state_up", null)
