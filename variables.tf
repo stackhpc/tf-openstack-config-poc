@@ -121,6 +121,7 @@ variable "networks" {
 
   type = map(
     object({
+      name                  = string
       region                = optional(string)
       shared                = optional(bool, false)
       external              = optional(bool, false)
@@ -149,6 +150,7 @@ variable "subnets" {
 
   type = map(
     object({
+      name                 = string
       network_id           = optional(string)
       network              = optional(string)
       region               = optional(string)
@@ -179,6 +181,7 @@ variable "subnets" {
 variable "routers" {
   type = map(
     object({
+      name                = string
       region              = optional(string)
       external_network_id = optional(string)
       admin_state_up      = optional(bool)
