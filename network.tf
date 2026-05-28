@@ -67,12 +67,20 @@ resource "openstack_networking_router_v2" "routers" {
     }
 }
 
-resource "openstack_networking_router_interface_v2" "router_interfaces" {
-    for_each = var.router_interfaces
+resource "openstack_networking_router_interface_v2" "interfaces" {
+  for_each = merge([
+    for router_key, router in var.routers : {
+      for idx, iface in lookup(router, "interfaces", []) :
+      "interface-${router_key}-${coalesce(iface.subnet, iface.subnet_id)" => {
+        router = router_key
+        iface  = iface
+      }
+    }
+  ]...)
 
-    router_id     = (each.value.router != null ? openstack_networking_router_v2.routers[each.value.router].id : each.value.router_id)
-    region        = lookup(each.value, "region", null)
-    subnet_id     = (each.value.subnet != null ? openstack_networking_subnet_v2.subnets[each.value.subnet].id : each.value.subnet_id)
-    port_id       = lookup(each.value, "port_id", null)
-    force_destroy = lookup(each.value, "force_destroy", false)
+  router_id = openstack_networking_router_v2.routers[each.value.router].id
+  region = lookup(each.value.iface, "region", null)
+  subnet_id = (each.value.iface.subnet != null ? openstack_networking_subnet_v2.subnets[each.value.iface.subnet].id : each.value.iface.subnet_id)
+  port_id       = lookup(each.value.iface, "port_id", null)
+  force_destroy = lookup(each.value.iface, "force_destroy", false)
 }
