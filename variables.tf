@@ -196,21 +196,17 @@ variable "routers" {
           ip_address = optional(string)
         })), []
       )
-    })
-  )
-  default = {}
-}
 
-variable "router_interfaces"{
-  type = map(
-    object({
-      router        = optional(string)
-      subnet        = optional(string)
-      router_id     = optional(string)
-      region        = optional(string)
-      subnet_id     = optional(string)
-      port_id       = optional(string)
-      force_destroy = optional(bool, false)
+      interfaces = optional(
+        list(object({
+          subnet        = optional(string)
+          router_id     = optional(string)
+          region        = optional(string)
+          subnet_id     = optional(string)
+          port_id       = optional(string)
+          force_destroy = optional(bool, false)
+          })), []
+      )
     })
   )
   default = {}
