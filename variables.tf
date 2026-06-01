@@ -118,7 +118,39 @@ variable "network_rbac" {
 }
 
 variable "networks" {
+  description = <<-EOT
+    Map of networks. Keys are unique tofu resource names. Elements are maps with keys/values:
+      name: Required string, openstack name of network
+      region: Optional string
+      shared: Optional bool, default false
+      external: Optional bool, default false
+      admin_state_up: Optional bool, default false
+      project: Optional string openstack project name, overrides tenant_id
+      tenant_id: Optional string, opentstack project ID
+      mtu: Optional number
+      port_security_enabled: Optional bool, default false
+      tags: Optional list
+      segments -
+        physical_network: Optional string
+        network_type: Optional string
+        segmentation_id: Optional number
 
+      subnets -
+        key: Required string, tofu resource name
+        name: Require string, openstack name
+        region: Optional string
+        cidr: Optional string
+        ip_version: Optional number, default 4
+        project: Optional string, openstack project name, overrides tenant_id
+        tenant_id: Optional string, openstack project ID
+        gateway_ip: Optional string
+        enable_dhcp: Optional bool, default true
+        dns_nameservers: Optional list
+        dns_publish_fixed_ip: Optional bool, default false
+        service_types: Optional list
+        no_gateway: Optional bool
+        tags: Optional list
+  EOT
   type = map(
     object({
       name                  = string
@@ -126,7 +158,7 @@ variable "networks" {
       shared                = optional(bool, false)
       external              = optional(bool, false)
       admin_state_up        = optional(bool)
-      project = optional(string)
+      project               = optional(string)
       tenant_id             = optional(string)
       mtu                   = optional(number)
       port_security_enabled = optional(bool, true)
@@ -139,50 +171,67 @@ variable "networks" {
         segmentation_id  = optional(number)
         })), []
       )
+
+      subnets = optional (list(object({
+        # TODO: make cidr or subnetpool_id required via validation
+        key                  = string
+        name                 = string
+        region               = optional(string)
+        cidr                 = optional(string)
+        ip_version           = optional(number, 4)
+        project              = optional(string)
+        tenant_id            = optional(string)
+        gateway_ip           = optional(string)
+        enable_dhcp          = optional(bool, true)
+        dns_nameservers      = optional(list(string), [])
+        dns_publish_fixed_ip = optional(bool, false)
+        service_types        = optional(list(string), [])
+        subnetpool_id        = optional(string)
+        no_gateway           = optional(bool)
+        tags                 = optional(list(string), [])
+
+        allocation_pool = optional(
+          list(object({
+          start = string
+          end   = string
+          })), []
+        )
+      })), [] )
     })
   )
   default = {}
 }
 
-variable "subnets" {
-  # TODO: make child of network, and automatically set network_id. See e.g. stuff in projects.tf
-  # TODO: make cidr or subnetpool_id required via validation
-
-  type = map(
-    object({
-      name                 = string
-      network_id           = optional(string)
-      network              = optional(string)
-      region               = optional(string)
-      cidr                 = optional(string)
-      ip_version           = optional(number, 4)
-      project              = optional(string)
-      tenant_id            = optional(string)
-      gateway_ip           = optional(string)
-      enable_dhcp          = optional(bool, true)
-      dns_nameservers      = optional(list(string), [])
-      dns_publish_fixed_ip = optional(bool, false)
-      service_types        = optional(list(string), [])
-      subnetpool_id        = optional(string)
-      no_gateway           = optional(bool)
-      tags                 = optional(list(string), [])
-
-      allocation_pool = optional(
-        list(object({
-        start = string
-        end   = string
-        })), []
-      )
-    })
-  )
-  default = {}
-}
 
 variable "routers" {
+  description = <<-EOT
+    Map of projects. Keys are unique tofu resource names. Elements are maps with keys/values:
+      name: Required string, openstack name of router
+      region: Optional string
+      external_network:  Optional string tofu resource network name, overrides external_network_id
+      external_network_id: Optional string, openstack network ID
+      admin_state_up: Optional bool
+      project: Optional string, tofu resource project name, overrides tenant_id
+      tenant_id: Optional string, openstack project ID
+      tags: Optional list
+      external_fixed_ip -
+        subnet: Optional string, tofu resource subnet name, overrides subnet_id
+        subnet_id: Optional string, openstack subnet ID
+        ip_address: Optional string
+
+      interfaces -
+        region: Optional string
+        subnet: Optional string, tofu resource subnet name, overrides subnet_id
+        subnet_id: Optional string, openstack subnet ID
+        port_id: Optional string
+        force_destroy: Optional bool, default false
+  EOT
+
   type = map(
     object({
       name                = string
       region              = optional(string)
+      external_network    = optional(string)
       external_network_id = optional(string)
       admin_state_up      = optional(bool)
       project             = optional(string)
@@ -199,9 +248,8 @@ variable "routers" {
 
       interfaces = optional(
         list(object({
-          subnet        = optional(string)
-          router_id     = optional(string)
           region        = optional(string)
+          subnet        = optional(string)
           subnet_id     = optional(string)
           port_id       = optional(string)
           force_destroy = optional(bool, false)
