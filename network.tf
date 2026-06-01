@@ -22,22 +22,30 @@ resource "openstack_networking_network_v2" "networks" {
 }
 
 resource "openstack_networking_subnet_v2" "subnets" {
-    for_each = var.subnets
+  for_each = merge([
+    for network_key, network in var.networks : {
+      for idx, subnet in lookup(network, "subnets", []) :
+      subnet.key => {
+        network = network_key
+        subnet  = subnet
+      }
+    }
+  ]...)
 
-    name                 = each.value.name
-    network_id           = (each.value.network != null ? openstack_networking_network_v2.networks[each.value.network].id : each.value.network_id )
-    region               = lookup(each.value, "region", null)
-    cidr                 = lookup(each.value, "cidr", null)
-    ip_version           = lookup(each.value, "ip_version", 4) #default can be 4 or 6
-    tenant_id            = (each.value.project != null ? openstack_identity_project_v3.project[each.value.project].id : each.value.tenant_id )
-    gateway_ip           = lookup(each.value, "gateway_ip", null)
-    enable_dhcp          = lookup(each.value, "enable_dhcp", true)
-    dns_nameservers      = lookup(each.value, "dns_nameservers", [])
-    dns_publish_fixed_ip = lookup(each.value, "dns_publish_fixed_ip", false)
-    service_types        = lookup(each.value, "service_types", [])
-    subnetpool_id        = lookup(each.value, "subnetpool_id", null)
-    no_gateway           = lookup(each.value, "no_gateway", null)
-    tags                 = lookup(each.value, "tags", [])
+    name                 = each.value.subnet.name
+    network_id           = openstack_networking_network_v2.networks[each.value.network].id
+    region               = lookup(each.value.subnet, "region", null)
+    cidr                 = lookup(each.value.subnet, "cidr", null)
+    ip_version           = lookup(each.value.subnet, "ip_version", 4) #default can be 4 or 6
+    tenant_id            = openstack_networking_network_v2.networks[each.value.network].tenant_id
+    gateway_ip           = lookup(each.value.subnet, "gateway_ip", null)
+    enable_dhcp          = lookup(each.value.subnet, "enable_dhcp", true)
+    dns_nameservers      = lookup(each.value.subnet, "dns_nameservers", [])
+    dns_publish_fixed_ip = lookup(each.value.subnet, "dns_publish_fixed_ip", false)
+    service_types        = lookup(each.value.subnet, "service_types", [])
+    subnetpool_id        = lookup(each.value.subnet, "subnetpool_id", null)
+    no_gateway           = lookup(each.value.subnet, "no_gateway", null)
+    tags                 = lookup(each.value.subnet, "tags", [])
 
     dynamic "allocation_pool" {
         for_each = lookup(each.value, "allocation_pool", [])
@@ -53,7 +61,7 @@ resource "openstack_networking_router_v2" "routers" {
 
     name                = each.value.name
     region              = lookup(each.value, "region", null)
-    external_network_id = lookup(each.value, "external_network_id", null)
+    external_network_id = (each.value.external_network != null ? openstack_networking_network_v2.networks[each.value.external_network].id : each.value.external_network_id)
     admin_state_up      = lookup(each.value, "admin_state_up", null)
     tenant_id           = (each.value.project != null ? openstack_identity_project_v3.project[each.value.project].id : each.value.tenant_id )
     tags                = lookup(each.value, "tags", [])
@@ -71,16 +79,17 @@ resource "openstack_networking_router_interface_v2" "interfaces" {
   for_each = merge([
     for router_key, router in var.routers : {
       for idx, iface in lookup(router, "interfaces", []) :
-      "interface-${router_key}-${coalesce(iface.subnet, iface.subnet_id)" => {
+      "interface-${router_key}-${iface.subnet}-${router.project}" => {
         router = router_key
         iface  = iface
       }
     }
   ]...)
 
-  router_id = openstack_networking_router_v2.routers[each.value.router].id
-  region = lookup(each.value.iface, "region", null)
-  subnet_id = (each.value.iface.subnet != null ? openstack_networking_subnet_v2.subnets[each.value.iface.subnet].id : each.value.iface.subnet_id)
+  router_id     = openstack_networking_router_v2.routers[each.value.router].id
+  region        = lookup(each.value.iface, "region", null)
+  subnet_id     = (each.value.iface.subnet != null ? openstack_networking_subnet_v2.subnets[each.value.iface.subnet].id : each.value.iface.subnet_id)
   port_id       = lookup(each.value.iface, "port_id", null)
   force_destroy = lookup(each.value.iface, "force_destroy", false)
 }
+
