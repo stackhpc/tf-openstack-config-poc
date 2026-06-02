@@ -130,12 +130,12 @@ variable "networks" {
       mtu: Optional number
       port_security_enabled: Optional bool, default false
       tags: Optional list
-      segments -
+      segments: Optional list -
         physical_network: Optional string
         network_type: Optional string
         segmentation_id: Optional number
 
-      subnets -
+      subnets: Optional list -
         key: Required string, tofu resource name
         name: Require string, openstack name
         region: Optional string
@@ -210,12 +210,12 @@ variable "routers" {
       project: Optional string, tofu resource project name, overrides tenant_id
       tenant_id: Optional string, openstack project ID
       tags: Optional list
-      external_fixed_ip -
+      external_fixed_ip: Optional list -
         subnet: Optional string, tofu resource subnet name, overrides subnet_id
         subnet_id: Optional string, openstack subnet ID
         ip_address: Optional string
 
-      interfaces -
+      interfaces: Optional list -
         region: Optional string
         subnet: Optional string, tofu resource subnet name, overrides subnet_id
         subnet_id: Optional string, openstack subnet ID
