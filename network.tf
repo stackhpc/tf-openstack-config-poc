@@ -24,7 +24,7 @@ resource "openstack_networking_network_v2" "networks" {
 resource "openstack_networking_subnet_v2" "subnets" {
   for_each = merge([
     for network_key, network in var.networks : {
-      for idx, subnet in lookup(network, "subnets", []) :
+      for subnet in lookup(network, "subnets", []) :
       subnet.key => {
         network = network_key
         subnet  = subnet
@@ -78,8 +78,8 @@ resource "openstack_networking_router_v2" "routers" {
 resource "openstack_networking_router_interface_v2" "interfaces" {
   for_each = merge([
     for router_key, router in var.routers : {
-      for idx, iface in lookup(router, "interfaces", []) :
-      "interface-${router_key}-${iface.subnet}-${router.project}" => {
+      for iface in lookup(router, "interfaces", []) :
+      "interface-${router_key}" => {
         router = router_key
         iface  = iface
       }

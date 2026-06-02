@@ -141,8 +141,6 @@ variable "networks" {
         region: Optional string
         cidr: Optional string
         ip_version: Optional number, default 4
-        project: Optional string, openstack project name, overrides tenant_id
-        tenant_id: Optional string, openstack project ID
         gateway_ip: Optional string
         enable_dhcp: Optional bool, default true
         dns_nameservers: Optional list
@@ -179,8 +177,6 @@ variable "networks" {
         region               = optional(string)
         cidr                 = optional(string)
         ip_version           = optional(number, 4)
-        project              = optional(string)
-        tenant_id            = optional(string)
         gateway_ip           = optional(string)
         enable_dhcp          = optional(bool, true)
         dns_nameservers      = optional(list(string), [])
