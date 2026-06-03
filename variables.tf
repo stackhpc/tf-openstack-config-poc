@@ -126,11 +126,11 @@ variable "networks" {
       external: Optional bool, default false
       admin_state_up: Optional bool, default false
       project: Optional string openstack project name, overrides tenant_id
-      tenant_id: Optional string, opentstack project ID
+      tenant_id: Optional string, openstack project ID
       mtu: Optional number
       port_security_enabled: Optional bool, default false
       tags: Optional list
-      segments: Optional list -
+      segments: Optional list of maps. Keys are unique tofu resource names. Elements are maps with keys/values -
         physical_network: Optional string
         network_type: Optional string
         segmentation_id: Optional number
@@ -210,23 +210,23 @@ variable "networks" {
 
 variable "routers" {
   description = <<-EOT
-    Map of projects. Keys are unique tofu resource names. Elements are maps with keys/values:
+    Map of routers. Keys are unique tofu resource names. Elements are maps with keys/values:
       name: Required string, openstack name of router
       region: Optional string
-      external_network:  Optional string tofu resource network name, overrides external_network_id
+      external_network:  Optional string, key in var.networks, overrides external_network_id
       external_network_id: Optional string, openstack network ID
       admin_state_up: Optional bool
       project: Optional string, tofu resource project name, overrides tenant_id
       tenant_id: Optional string, openstack project ID
       tags: Optional list
-      external_fixed_ip: Optional list -
+      external_fixed_ip: Optional list of maps -
         subnet: Optional string, tofu resource subnet name, overrides subnet_id
         subnet_id: Optional string, openstack subnet ID
         ip_address: Optional string
 
-      interfaces: Optional list -
+      interfaces: Optional list of maps -
         region: Optional string
-        subnet: Optional string, tofu resource subnet name, overrides subnet_id
+        subnet: Optional string, key in var.network[network_key].subnets, overrides subnet_id
         subnet_id: Optional string, openstack subnet ID
         port_id: Optional string
         force_destroy: Optional bool, default false
