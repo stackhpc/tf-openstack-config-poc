@@ -24,8 +24,8 @@ resource "openstack_networking_network_v2" "networks" {
 resource "openstack_networking_subnet_v2" "subnets" {
   for_each = merge([
     for network_key, network in var.networks : {
-      for subnet in lookup(network, "subnets", []) :
-      subnet.key => {
+      for subnet_key, subnet in lookup(network, "subnets", {}) :
+      subnet_key => {
         network = network_key
         subnet  = subnet
       }

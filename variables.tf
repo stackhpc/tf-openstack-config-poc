@@ -135,7 +135,7 @@ variable "networks" {
         network_type: Optional string
         segmentation_id: Optional number
 
-      subnets: Optional list -
+      subnets: Optional map -
         key: Required string, tofu resource name
         name: Require string, openstack name
         region: Optional string
@@ -170,9 +170,8 @@ variable "networks" {
         })), []
       )
 
-      subnets = optional (list(object({
+      subnets = optional (map(object({
         # TODO: make cidr or subnetpool_id required via validation
-        key                  = string
         name                 = string
         region               = optional(string)
         cidr                 = optional(string)
@@ -192,7 +191,7 @@ variable "networks" {
           end   = string
           })), []
         )
-      })), [] )
+      })), {} )
     })
   )
   default = {}
