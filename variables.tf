@@ -171,7 +171,6 @@ variable "networks" {
       )
 
       subnets = optional (map(object({
-        # TODO: make cidr or subnetpool_id required via validation
         name                 = string
         region               = optional(string)
         cidr                 = optional(string)
@@ -194,6 +193,17 @@ variable "networks" {
       })), {} )
     })
   )
+
+  validation {
+    condition = alltrue(flatten([
+      for network in values(var.networks) : [
+        for subnet in values(lookup(network, "subnets", {})) :
+        subnet.cidr != null || subnet.subnetpool_id != null
+      ]
+    ]))
+    error_message = "Each subnet must specify either cidr or subnetpool_id."
+  }
+
   default = {}
 }
 
