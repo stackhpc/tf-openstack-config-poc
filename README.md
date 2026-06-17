@@ -90,7 +90,8 @@ The "Import?" column refers to support for [importing existing openstack configu
 | Groups            | Yes        | Yes      | |
 | Users             | Yes        | Yes      | |
 | Role assignments  | New        | Yes      | Only groups (not users) can be assigned roles |
-| Routers           | No         | N/A      | |
+| Networks          | Yes        | No       | Subnets are defined in the same variable |
+| Routers           | Yes        | No       | Router interfaces are defined in the same variable |
 | Security groups   | No         | N/A      | |
 | Network RBAC      | Yes        | No       | |
 | Flavors           | Yes        | Yes      | |
@@ -98,6 +99,55 @@ The "Import?" column refers to support for [importing existing openstack configu
 | Images            | Yes        | No       | Does not support local_file_path for image upload |
 | Image elements    | No         | N/A      | Considered out of scope |
 | Ratings           | No         | N/A      | |
+
+## Network config example
+The following is an example config for how to use the new network support.
+This config defines a demo-project. A demo-network and demo-subnet are defined using the networks variable. A demo-router and demo-router interface using the routers variable.
+
+```
+module "openstack" {
+  source = "github.com/stackhpc/tofu-openstack-config?ref=network-support"
+  projects = {
+    "demo-project" = {
+      compute_quota = {
+      }
+      network_quota = {
+      }
+      blockstorage_quota = {
+      }
+    }
+  }
+
+  networks = {
+    "demo-network:demo-project" = { #tofu resource name
+      name = "demo-network" #openstack network name
+      project = "demo-project"
+
+      subnets = {
+        "demo-subnet:demo-project" = { #tofu resource name
+          name = "demo-subnet" #openstack subnet name
+          cidr = "10.0.0.0/24"
+        }
+      }
+    }
+  }
+
+  routers = {
+    "demo-router:demo-project"  = { #tofu resource name
+      name = "demo-router" #openstack router name
+      project = "demo-project"
+      external_network = "demo-network:demo-project" #tofu resource name of network
+      external_fixed_ips = [{
+        subnet = "demo-subnet:demo-project" #tofu resource name of subnet
+      }]
+      interfaces = [
+        { subnet = "demo-subnet:demo-project" } #tofu resource name of subnet
+      ]
+    }
+  }
+
+}
+```
 
 ## Current Issues
 
