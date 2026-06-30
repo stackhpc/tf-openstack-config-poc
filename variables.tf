@@ -181,6 +181,7 @@ variable "networks" {
         dns_publish_fixed_ip = optional(bool, false)
         service_types        = optional(list(string), [])
         subnetpool_id        = optional(string)
+        prefix_length        = optional(number)
         no_gateway           = optional(bool)
         tags                 = optional(list(string), [])
 
@@ -429,26 +430,28 @@ output "role_assignments" {
 #     value = {for v in flatten([for rbac in var.network_rbac: [for project in rbac.projects: {rbac=rbac, project=project}]]): "${v.rbac.network}:${v.project}" => v}
 # }
 
-output "subnet" {
+output "subnets" {
   value = {
     for k, v in openstack_networking_subnet_v2.subnets :
     k => {
       id         = v.id
       gateway_ip = v.gateway_ip
+      cidr       = v.cidr
     }
   }
 }
 
-output "network" {
+output "networks" {
   value = {
     for k, v in openstack_networking_network_v2.networks :
     k => {
       id = v.id
+      segments = v.segments
     }
   }
 }
 
-output "router" {
+output "routers" {
   value = {
     for k, v in openstack_networking_router_v2.routers :
     k => {
@@ -456,4 +459,5 @@ output "router" {
     }
   }
 }
+
 
