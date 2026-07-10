@@ -149,13 +149,46 @@ variable "networks" {
         no_gateway: Optional bool
         tags: Optional list
   EOT
+  description = <<-EOT
+    Map of networks. Keys are unique tofu resource names. Elements are maps with keys/values:
+      name: Required string, openstack name of network
+      region: Optional string
+      shared: Optional bool, default false
+      external: Optional bool, default false
+      admin_state_up: Optional bool, default false
+      project: Optional string openstack project name, overrides tenant_id
+      tenant_id: Optional string, openstack project ID
+      mtu: Optional number
+      port_security_enabled: Optional bool, default false
+      tags: Optional list
+      segments: Optional list of maps. Keys are unique tofu resource names. Elements are maps with keys/values -
+        physical_network: Optional string
+        network_type: Optional string
+        segmentation_id: Optional number
+
+      subnets: Optional map -
+        key: Required string, tofu resource name
+        name: Require string, openstack name
+        region: Optional string
+        cidr: Optional string
+        ip_version: Optional number, default 4
+        gateway_ip: Optional string
+        enable_dhcp: Optional bool, default true
+        dns_nameservers: Optional list
+        dns_publish_fixed_ip: Optional bool, default false
+        service_types: Optional list
+        no_gateway: Optional bool
+        tags: Optional list
+  EOT
   type = map(
     object({
+      name                  = string
       name                  = string
       region                = optional(string)
       shared                = optional(bool, false)
       external              = optional(bool, false)
       admin_state_up        = optional(bool)
+      project               = optional(string)
       project               = optional(string)
       tenant_id             = optional(string)
       mtu                   = optional(number)
@@ -181,10 +214,16 @@ variable "networks" {
         dns_publish_fixed_ip = optional(bool, false)
         service_types        = optional(list(string), [])
         subnetpool_id        = optional(string)
-        prefix_length        = optional(number)
         no_gateway           = optional(bool)
         tags                 = optional(list(string), [])
 
+        allocation_pool = optional(
+          list(object({
+          start = string
+          end   = string
+          })), []
+        )
+      })), {} )
         allocation_pool = optional(
           list(object({
           start = string
@@ -205,8 +244,20 @@ variable "networks" {
     error_message = "Each subnet must specify either cidr or subnetpool_id."
   }
 
+
+  validation {
+    condition = alltrue(flatten([
+      for network in values(var.networks) : [
+        for subnet in values(lookup(network, "subnets", {})) :
+        subnet.cidr != null || subnet.subnetpool_id != null
+      ]
+    ]))
+    error_message = "Each subnet must specify either cidr or subnetpool_id."
+  }
+
   default = {}
 }
+
 
 
 variable "routers" {
@@ -233,13 +284,40 @@ variable "routers" {
         force_destroy: Optional bool, default false
   EOT
 
+  description = <<-EOT
+    Map of routers. Keys are unique tofu resource names. Elements are maps with keys/values:
+      name: Required string, openstack name of router
+      region: Optional string
+      external_network:  Optional string, key in var.networks, overrides external_network_id
+      external_network_id: Optional string, openstack network ID
+      admin_state_up: Optional bool
+      project: Optional string, tofu resource project name, overrides tenant_id
+      tenant_id: Optional string, openstack project ID
+      tags: Optional list
+      external_fixed_ip: Optional list of maps -
+        subnet: Optional string, tofu resource subnet name, overrides subnet_id
+        subnet_id: Optional string, openstack subnet ID
+        ip_address: Optional string
+
+      interfaces: Optional list of maps -
+        region: Optional string
+        subnet: Optional string, key in var.network[network_key].subnets, overrides subnet_id
+        subnet_id: Optional string, openstack subnet ID
+        port_id: Optional string
+        force_destroy: Optional bool, default false
+  EOT
+
   type = map(
     object({
       name                = string
+      name                = string
       region              = optional(string)
+      external_network    = optional(string)
       external_network    = optional(string)
       external_network_id = optional(string)
       admin_state_up      = optional(bool)
+      project             = optional(string)
+      tenant_id           = optional(string)
       project             = optional(string)
       tenant_id           = optional(string)
       tags                = optional(list(string), [])
@@ -247,9 +325,20 @@ variable "routers" {
       external_fixed_ip = optional(
         list(object({
           subnet     = optional(string)
+          subnet     = optional(string)
           subnet_id  = optional(string)
           ip_address = optional(string)
         })), []
+      )
+
+      interfaces = optional(
+        list(object({
+          region        = optional(string)
+          subnet        = optional(string)
+          subnet_id     = optional(string)
+          port_id       = optional(string)
+          force_destroy = optional(bool, false)
+          })), []
       )
 
       interfaces = optional(
