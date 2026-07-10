@@ -385,6 +385,26 @@ variable "shares"{
   default = {}
 }
 
+variable "sharetypes" {
+
+  type = map(
+    object({
+      description = optional(string)
+      is_public = optional(bool, true)
+
+      extra_specs = optional(
+        object({
+          driver_handles_share_servers = bool
+          snapshot_support = optional(bool, null)
+          share_backend_name = optional(string, null)
+          vippoolname = optional(string)
+        })
+      )
+    })
+  )
+  default = {}
+}
+
 # TODO: more outputs?
 output "projects" {
   #value = {for k, v in openstack_identity_project_v3.project: k => v.id}
