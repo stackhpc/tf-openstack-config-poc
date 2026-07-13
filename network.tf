@@ -44,6 +44,7 @@ resource "openstack_networking_subnet_v2" "subnets" {
     dns_publish_fixed_ip = lookup(each.value.subnet, "dns_publish_fixed_ip", false)
     service_types        = lookup(each.value.subnet, "service_types", [])
     subnetpool_id        = lookup(each.value.subnet, "subnetpool_id", null)
+    prefix_length        = lookup(each.value.subnet, "prefix_length", null)
     no_gateway           = lookup(each.value.subnet, "no_gateway", null)
     tags                 = lookup(each.value.subnet, "tags", [])
 
