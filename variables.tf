@@ -118,104 +118,46 @@ variable "network_rbac" {
 }
 
 variable "networks" {
+  description = <<-EOT
+    Map of networks. Keys are unique tofu resource names. Elements are maps with keys/values:
+      name: Required string, openstack name of network
+      region: Optional string
+      shared: Optional bool, default false
+      external: Optional bool, default false
+      admin_state_up: Optional bool, default false
+      project: Optional string openstack project name, overrides tenant_id
+      tenant_id: Optional string, openstack project ID
+      mtu: Optional number
+      port_security_enabled: Optional bool, default false
+      tags: Optional list
+      segments: Optional list of maps. Keys are unique tofu resource names. Elements are maps with keys/values -
+        physical_network: Optional string
+        network_type: Optional string
+        segmentation_id: Optional number
 
-  type = map(
-    object({
-      region                = optional(string)
-      shared                = optional(bool, false)
-      external              = optional(bool, false)
-      admin_state_up        = optional(bool, false)
-      tentant_id            = optional(string)
-      mtu                   = optional(number)
-      port_security_enabled = optional(bool, true)
-      tags                  = optional(list(string), [])
-
-      segments = optional(
-        list(object({
-        physical_network = optional(string)
-        network_type     = optional(string)
-        segmentation_id  = optional(number)
-        })), []
-      )
-    })
-  )
-  default = {}
-}
-
-variable "subnets" {
-  # TODO: make child of network, and automatically set network_id. See e.g. stuff in projects.tf
-  # TODO: make cidr or subnetpool_id required via validation
-
-  type = map(
-    object({
-      network_id           = string
-      region               = optional(string)
-      cidr                 = optional(string)
-      ip_version           = optional(number, 4)
-      tentant_id           = optional(string)
-      gateway_ip           = optional(string)
-      enable_dhcp          = optional(bool, true)
-      dns_nameservers      = optional(list(string), [])
-      dns_publish_fixed_ip = optional(bool, false)
-      service_types        = optional(list(string), [])
-      subnetpool_id        = optional(string)
-      no_gateway           = optional(bool)
-      tags                 = optional(list(string), [])
-
-      allocation_pool = optional(
-        list(object({
-        start = string
-        end   = string
-        })), []
-      )
-    })
-  )
-  default = {}
-}
-
-variable "routers" {
-  type = map(
-    object({
-      region              = optional(string)
-      external_network_id = optional(string)
-      external_subnet_ids = optional(list(string), [])
-      enable_snat         = optional(bool)
-      admin_state_up      = optional(bool, false)
-      tentant_id          = optional(string)
-      tags                = optional(list(string), [])
-
-      external_fixed_ip = optional(
-        list(object({
-          subnet_id  = optional(string)
-          ip_address = optional(string)
-        })), []
-      )
-    })
-  )
-  default = {}
-}
-
-variable "router_interfaces"{
-  type = map(
-    object({
-      region        = optional(string)
-      subnet_id     = optional(string)
-      port_id       = optional(string)
-      force_destroy = optional(bool, false)
-    })
-  )
-  default = {}
-}
-
-variable "portal_internal_networks" {
-
+      subnets: Optional map -
+        key: Required string, tofu resource name
+        name: Require string, openstack name
+        region: Optional string
+        cidr: Optional string
+        ip_version: Optional number, default 4
+        gateway_ip: Optional string
+        enable_dhcp: Optional bool, default true
+        dns_nameservers: Optional list
+        dns_publish_fixed_ip: Optional bool, default false
+        service_types: Optional list
+        no_gateway: Optional bool
+        tags: Optional list
+  EOT
   type = map(
     object({
       name                  = string
       region                = optional(string)
       shared                = optional(bool, false)
       external              = optional(bool, false)
-      admin_state_up        = optional(bool, false)
+      admin_state_up        = optional(bool)
+      project               = optional(string)
+      tenant_id             = optional(string)
       mtu                   = optional(number)
       port_security_enabled = optional(bool, true)
       tags                  = optional(list(string), [])
@@ -227,70 +169,99 @@ variable "portal_internal_networks" {
         segmentation_id  = optional(number)
         })), []
       )
+
+      subnets = optional (map(object({
+        name                 = string
+        region               = optional(string)
+        cidr                 = optional(string)
+        ip_version           = optional(number, 4)
+        gateway_ip           = optional(string)
+        enable_dhcp          = optional(bool, true)
+        dns_nameservers      = optional(list(string), [])
+        dns_publish_fixed_ip = optional(bool, false)
+        service_types        = optional(list(string), [])
+        subnetpool_id        = optional(string)
+        prefix_length        = optional(number)
+        no_gateway           = optional(bool)
+        tags                 = optional(list(string), [])
+
+        allocation_pool = optional(
+          list(object({
+          start = string
+          end   = string
+          })), []
+        )
+      })), {} )
     })
   )
+
+  validation {
+    condition = alltrue(flatten([
+      for network in values(var.networks) : [
+        for subnet in values(lookup(network, "subnets", {})) :
+        subnet.cidr != null || subnet.subnetpool_id != null
+      ]
+    ]))
+    error_message = "Each subnet must specify either cidr or subnetpool_id."
+  }
+
   default = {}
 }
 
-variable "portal_internal_subnets" {
-  # TODO: make child of network, and automatically set network_id. See e.g. stuff in projects.tf
-  # TODO: make cidr or subnetpool_id required via validation
 
-  type = map(
-    object({
-      name                 = string
-      network_id           = string
-      region               = optional(string)
-      cidr                 = optional(string)
-      ip_version           = optional(number, 4)
-      gateway_ip           = optional(string)
-      enable_dhcp          = optional(bool, true)
-      dns_nameservers      = optional(list(string), [])
-      dns_publish_fixed_ip = optional(bool)
-      service_types        = optional(list(string), [])
-      subnetpool_id        = optional(string)
-      no_gateway           = optional(bool)
-      tags                 = optional(list(string), [])
+variable "routers" {
+  description = <<-EOT
+    Map of routers. Keys are unique tofu resource names. Elements are maps with keys/values:
+      name: Required string, openstack name of router
+      region: Optional string
+      external_network:  Optional string, key in var.networks, overrides external_network_id
+      external_network_id: Optional string, openstack network ID
+      admin_state_up: Optional bool
+      project: Optional string, tofu resource project name, overrides tenant_id
+      tenant_id: Optional string, openstack project ID
+      tags: Optional list
+      external_fixed_ip: Optional list of maps -
+        subnet: Optional string, tofu resource subnet name, overrides subnet_id
+        subnet_id: Optional string, openstack subnet ID
+        ip_address: Optional string
 
-      allocation_pool = optional(
-        list(object({
-        start = string
-        end   = string
-        })), []
-      )
-    })
-  )
-  default = {}
-}
+      interfaces: Optional list of maps -
+        region: Optional string
+        subnet: Optional string, key in var.network[network_key].subnets, overrides subnet_id
+        subnet_id: Optional string, openstack subnet ID
+        port_id: Optional string
+        force_destroy: Optional bool, default false
+  EOT
 
-variable "portal_routers" {
   type = map(
     object({
       name                = string
       region              = optional(string)
+      external_network    = optional(string)
       external_network_id = optional(string)
-      external_subnet_ids = optional(list(string), null)
-      enable_snat         = optional(bool)
-      admin_state_up      = optional(bool, false)
+      admin_state_up      = optional(bool)
+      project             = optional(string)
+      tenant_id           = optional(string)
       tags                = optional(list(string), [])
 
       external_fixed_ip = optional(
         list(object({
+          subnet     = optional(string)
           subnet_id  = optional(string)
           ip_address = optional(string)
         })), []
       )
 
-      router_interface = optional(
-        object({
-        region        = optional(string)
-        subnet_id     = optional(string)
-        port_id       = optional(string)
-        force_destroy = optional(bool, false)
-      })
-    )
+      interfaces = optional(
+        list(object({
+          region        = optional(string)
+          subnet        = optional(string)
+          subnet_id     = optional(string)
+          port_id       = optional(string)
+          force_destroy = optional(bool, false)
+          })), []
+      )
     })
-
   )
   default = {}
 }
@@ -436,46 +407,30 @@ output "role_assignments" {
 #     value = {for v in flatten([for rbac in var.network_rbac: [for project in rbac.projects: {rbac=rbac, project=project}]]): "${v.rbac.network}:${v.project}" => v}
 # }
 
-output "subnet" {
+output "subnets" {
   value = {
     for k, v in openstack_networking_subnet_v2.subnets :
     k => {
       id         = v.id
       gateway_ip = v.gateway_ip
+      cidr       = v.cidr
     }
   }
 }
 
-output "network" {
+output "networks" {
   value = {
     for k, v in openstack_networking_network_v2.networks :
     k => {
       id = v.id
+      segments = v.segments
     }
   }
 }
 
-output "router" {
+output "routers" {
   value = {
     for k, v in openstack_networking_router_v2.routers :
-    k => {
-      id = v.id
-    }
-  }
-}
-
-output "portal_internal_network" {
-  value = {
-    for k, v in openstack_networking_network_v2.portal_internal_networks :
-    k => {
-      id = v.id
-    }
-  }
-}
-
-output "portal_router" {
-  value = {
-    for k, v in openstack_networking_router_v2.portal_routers :
     k => {
       id = v.id
     }
