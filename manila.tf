@@ -23,9 +23,16 @@ resource "openstack_sharedfilesystem_sharetype_v2" "sharetypes" {
     is_public  = lookup(each.value, "is_public", true)
 
     extra_specs = {
-        driver_handles_share_servers = tostring(each.value.extra_specs.driver_handles_share_servers)
-        snapshot_support             = each.value.extra_specs.snapshot_support == null ? null : tostring(each.value.extra_specs.snapshot_support)
+        driver_handles_share_servers = each.value.extra_specs.driver_handles_share_servers
+        snapshot_support             = each.value.extra_specs.snapshot_support == null ? null : each.value.extra_specs.snapshot_support
         share_backend_name           = each.value.extra_specs.share_backend_name
-        vippoolname                  = each.value.extra_specs.vippoolname
+        "vast:vippoolname"           = each.value.extra_specs.vippoolname != null ? var.vippools[each.value.extra_specs.vippoolname].name : null
     }
+}
+
+resource "openstack_sharedfilesystem_sharetype_access_v2" "sharetypes_access" {
+    for_each = var.sharetypes_access
+
+    share_type_id = each.value.sharetype_name != null ? openstack_sharedfilesystem_sharetype_v2.sharetypes[each.value.sharetype_name].id : each.value.share_type_id
+    project_id    = each.value.project != null ? openstack_identity_project_v3.project[each.value.project].id : each.value.proeject_id
 }

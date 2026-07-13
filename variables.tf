@@ -301,16 +301,28 @@ variable "sharetypes" {
   type = map(
     object({
       description = optional(string)
-      is_public = optional(bool, true)
+      is_public   = optional(bool, true)
 
       extra_specs = optional(
         object({
           driver_handles_share_servers = bool
-          snapshot_support = optional(bool, null)
-          share_backend_name = optional(string, null)
-          vippoolname = optional(string)
+          snapshot_support             = optional(bool, null)
+          share_backend_name           = optional(string, null)
+          vippoolname                  = string
         })
       )
+    })
+  )
+  default = {}
+}
+
+variable "sharetypes_access" {
+  type = map(
+    object({
+      sharetype_name = optional(string)
+      share_type_id  = optional(string)
+      project        = optional(string)
+      project_id     = optional(string)
     })
   )
   default = {}
