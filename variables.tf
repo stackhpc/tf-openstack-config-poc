@@ -328,6 +328,29 @@ variable "sharetypes_access" {
   default = {}
 }
 
+variable "vippools" {
+  type = map(
+    object({
+
+      name                  = optional(string)
+      network               = optional(string)
+      vlan                  = optional(number)
+      role                  = optional(string)
+      subnet_cidr           = optional(number)
+      tenant_id             = optional(string)
+      project               = optional(string)
+      # may need renaming
+      vip_ranges            = optional(list(object({
+        subnet = string
+        start  = number
+        end    = number
+      })), [])
+      ip_ranges             = optional(list(list(string)), [])
+    })
+  )
+  default = {}
+}
+
 # TODO: more outputs?
 output "projects" {
   #value = {for k, v in openstack_identity_project_v3.project: k => v.id}
