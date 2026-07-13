@@ -356,6 +356,77 @@ variable "shares"{
   default = {}
 }
 
+variable "sharetypes" {
+  description = <<-EOT
+    Mapping of sharetype definitions. Key is sharetype name. Values are mappings with keys/values:
+      description: Optional string
+      is_public: Optional bool, default true
+      extra_specs: Required list
+        driver_handles_share_servers: Required bool
+        snapshot_support: Optional bool
+        share_backend_name: Required string
+        vippoolname: Required string, tofu resource vippool name
+  EOT
+
+  type = map(
+    object({
+      description = optional(string)
+      is_public   = optional(bool, true)
+
+      extra_specs = optional(
+        object({
+          driver_handles_share_servers = bool
+          snapshot_support             = optional(bool, null)
+          share_backend_name           = string
+          vippoolname                  = string
+        })
+      )
+    })
+  )
+  default = {}
+}
+
+variable "sharetypes_access" {
+  description = <<-EOT
+    Mappings of sharetype access definitions. Key is tofu sharetype access resource name. Values are mappings with keys/values:
+    sharetype_name: Optional string, tofu sharetype resource name, overrides share_type_id
+    share_type_id: Optional string, overridden by sharetype_name
+    project: Optional string, tofu project resource name
+    project_id: Optional string
+  type = map(
+    object({
+      sharetype_name = optional(string)
+      share_type_id  = optional(string)
+      project        = optional(string)
+      project_id     = optional(string)
+    })
+  )
+  default = {}
+}
+
+variable "vippools" {
+  type = map(
+    object({
+
+      name                  = optional(string)
+      network               = optional(string)
+      vlan                  = optional(number)
+      role                  = optional(string)
+      subnet_cidr           = optional(number)
+      tenant_id             = optional(string)
+      project               = optional(string)
+      # may need renaming
+      vip_ranges            = optional(list(object({
+        subnet = string
+        start  = number
+        end    = number
+      })), [])
+      ip_ranges             = optional(list(list(string)), [])
+    })
+  )
+  default = {}
+}
+
 # TODO: more outputs?
 output "projects" {
   #value = {for k, v in openstack_identity_project_v3.project: k => v.id}
