@@ -487,20 +487,3 @@ output "router" {
   }
 }
 
-output "portal_internal_network" {
-  value = {
-    for k, v in openstack_networking_network_v2.portal_internal_networks :
-    k => {
-      id = v.id
-    }
-  }
-}
-
-output "portal_router" {
-  value = {
-    for k, v in openstack_networking_router_v2.portal_routers :
-    k => {
-      id = v.id
-    }
-  }
-}
