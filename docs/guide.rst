@@ -2,8 +2,8 @@
 Tofu Openstack Config User Guide
 ================================
 
-Tofu openstack config allows you to manage your openstack config using terraform.
-This guide will provide you with example templates for resources available. Full
+Tofu Openstack Config allows you to manage your Openstack config using Terraform.
+This guide will provide you with example templates for resources available. A full
 list of variables available for each resource can be found in `variables.tf`_,
 with a description and type.
 
