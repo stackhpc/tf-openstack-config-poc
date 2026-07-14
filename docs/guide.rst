@@ -1,8 +1,8 @@
 ================================
-Tofu Openstack Config User Guide
+Tofu OpenStack Config User Guide
 ================================
 
-Tofu Openstack Config allows you to manage your Openstack config using Terraform.
+Tofu OpenStack Config allows you to manage your Openstack config using Terraform.
 This guide will provide you with example templates for resources available. A full
 list of variables available for each resource can be found in `variables.tf`_,
 with a description and type.
@@ -41,7 +41,7 @@ Template:
         project-config = {
              ## start of template
             "<your-project-name>" = {
-                description  =
+                description =
                 computa_quota = {
                     cores     =
                     instances =
@@ -60,6 +60,29 @@ Template:
                     gigbytes  =
                     ....
                 }
+            }
+            ## end of template
+        }
+    }
+
+Flavors
+-------
+
+To create a flavor, add config to ``flavor-config.tf``.
+
+Template:
+
+.. code-block:: console
+
+    locals {
+        flavor-config = {
+            ## start of template
+            <your-flavor-name> = {
+                ram      =
+                vcpus    =
+                disk     =
+                ...
+                projects = [ ... ]
             }
             ## end of template
         }
@@ -117,6 +140,46 @@ Template:
                         prefix_length =
                     }
                 }
+            }
+            ## end of template
+        }
+    }
+
+
+Routers
+-------
+
+To create a router, add config to ``router-config.tf`` .
+
+Template:
+
+.. code-block:: console
+
+    locals {
+        router-config = {
+            ## start of template
+            "<your-tofu-router-name>" = {
+                name                = "<your-openstack-router-name>"
+                region              =
+                external_network    = "<your-tofu-network-name>"
+                # or
+                external_network_id =
+                project             = "<your-tofu-project-name>"
+                # or
+                tenant_id           =
+                ...
+
+                external_fixed_ips  = [
+                { subnet    = "<your-tofu-subnet-name>" }, # external_fixed_ips need to be separated by a comma (,)
+                { subnet_id = }
+                ...
+                ]
+
+                interfaces = [
+                { subnet = "<your-tofu-subnet-name>" }, # interfaces need to be separated by a comma (,)
+                { subnet_id = }
+                ...
+                ]
             }
             ## end of template
         }
@@ -198,6 +261,26 @@ Template:
         ]
     }
 
+Images
+------
+
+To create an image, add config to ``image-config.tf``.
+
+Template:
+
+.. code-block:: console
+
+    locals {
+        image-config = {
+            ## start of template
+            <your-image-name> = {
+                container_format =
+                disk_format      =
+                image_source_url =
+                ...
+            }
+            ## end of template
+        }
 
 Sharetypes
 ----------
