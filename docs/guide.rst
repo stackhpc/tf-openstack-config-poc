@@ -2,7 +2,7 @@
 Tofu OpenStack Config User Guide
 ================================
 
-Tofu OpenStack Config allows you to manage your Openstack config using Terraform.
+Tofu OpenStack Config allows you to manage your OpenStack config using Terraform.
 This guide will provide you with example templates for available resources. A full
 list of variables available for each resource can be found in `variables.tf`_,
 with a description and type.
@@ -30,7 +30,7 @@ format is ``<resource>-config.tf``, for example:
 Projects
 ---------
 
-To create a project, add the config to ``project-config.tf``.
+To create a project, add config to ``project-config.tf``.
 
 Template:
 
@@ -90,7 +90,7 @@ Template:
 Networks
 --------
 
-To create a network, add the config to ``network-config.tf``.
+To create a network, add config to ``network-config.tf``.
 
 Template:
 
