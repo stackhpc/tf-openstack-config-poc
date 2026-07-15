@@ -3,7 +3,7 @@ Tofu OpenStack Config User Guide
 ================================
 
 Tofu OpenStack Config allows you to manage your Openstack config using Terraform.
-This guide will provide you with example templates for resources available. A full
+This guide will provide you with example templates for available resources. A full
 list of variables available for each resource can be found in `variables.tf`_,
 with a description and type.
 
@@ -12,17 +12,16 @@ as follows:
 
 .. code-block:: console
 
-    module openstack {
+    module "openstack" {
         source =
 
         projects = local.project-config
         networks = local.network-config
         ...
-
     }
 
 The config for each resource can then be written into separate files, suggested
-format is ``<resource>-config.tf`` for example:
+format is ``<resource>-config.tf``, for example:
 
 - project-config.tf
 - network-config.tf
@@ -303,7 +302,7 @@ Template:
                     driver_handles_share_servers =
                     snapshot_support             =
                     share_backend_name           =
-                    vippoolname                  = # see opentofu manila intergration
+                    vippoolname                  = # see opentofu manila integration
                 }
             }
             ## end of template
@@ -337,13 +336,12 @@ Template:
     }
 
 =================================
-OpenTofu Vast Manila Intergration
+OpenTofu Vast Manila Integration
 =================================
 
 To access the ``vippools`` resource from the `OpenTofu Vast Manila`_ module,
 you need to provide the ``openstack`` module with the ``vast`` resources.
-This can be done by including the following
-in your ``main.tf``:
+This can be done by including the following in your ``main.tf``:
 
 .. code-block:: console
 
