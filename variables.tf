@@ -393,6 +393,7 @@ variable "sharetypes_access" {
     share_type_id: Optional string, overridden by sharetype_name
     project: Optional string, tofu project resource name
     project_id: Optional string
+  EOT
   type = map(
     object({
       sharetype_name = optional(string)
