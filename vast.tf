@@ -7,7 +7,7 @@ resource "vastdata_vip_pool" "vippools" {
   vlan        = each.value.vlan != null ? (each.value.vlan) : one(openstack_networking_network_v2.networks[each.value.network].segments).segmentation_id
   role        = lookup(each.value, "role", null)
   subnet_cidr = lookup(each.value, "subnet_cidr", null)
-  tenant_id   = (each.value.project != null ? openstack_identity_project_v3.project[each.value.project].id : each.value.tenant_id)
+  tenant_id   = (each.value.vast_tenant != null ? vastdata_tenant.vast_tenant[each.value.vast_tenant].id : each.value.tenant_id)
   ip_ranges   = each.value.ip_ranges != null ? (each.value.ip_ranges) : [
     for r in each.value.vip_ranges : [
       cidrhost(openstack_networking_subnet_v2.subnets[r.subnet].cidr, r.start),

@@ -414,7 +414,7 @@ variable "vippools" {
       role: Optional string
       subnet_cidr: Optional number
       tenant_id: Optional string, overridden by project
-      project: Optional string, openstack project name, overrides tenant_id
+      vast_tenant: Optional string, vast tenant name, overrides tenant_id
       vip_ranges: Optional list. Elements are maps with keys/values.
         subnet: Required string, tofu subnet resource name
         start: Required number
@@ -429,14 +429,14 @@ variable "vippools" {
       role                  = optional(string)
       subnet_cidr           = optional(number)
       tenant_id             = optional(string)
-      project               = optional(string)
+      vast_tenant           = optional(string)
       # may need renaming
       vip_ranges            = optional(list(object({
         subnet = string
         start  = number
         end    = number
       })), [])
-      ip_ranges             = optional(list(list(string)), [])
+      ip_ranges             = optional(list(list(string)), null)
     })
   )
   default = {}
