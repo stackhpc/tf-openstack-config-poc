@@ -130,14 +130,14 @@ variable "networks" {
       mtu: Optional number
       port_security_enabled: Optional bool, default false
       tags: Optional list
-      segments: Optional list of maps. Keys are unique tofu resource names. Elements are maps with keys/values -
+      segments: Optional list of objects -
         physical_network: Optional string
         network_type: Optional string
         segmentation_id: Optional number
 
       subnets: Optional map -
         key: Required string, tofu resource name
-        name: Require string, openstack name
+        name: Required string, openstack name
         region: Optional string
         cidr: Optional string
         ip_version: Optional number, default 4
@@ -146,8 +146,13 @@ variable "networks" {
         dns_nameservers: Optional list
         dns_publish_fixed_ip: Optional bool, default false
         service_types: Optional list
+        subnetpool_id: Optional string
+        prefix_length: Optional number
         no_gateway: Optional bool
         tags: Optional list
+        allocation_pool: Optional list of objects -
+          start: Required string
+          end: Required string
   EOT
   type = map(
     object({
@@ -413,13 +418,13 @@ variable "vippools" {
       vlan: Optional number
       role: Optional string
       subnet_cidr: Optional number
-      tenant_id: Optional string, overridden by project
+      tenant_id: Optional string, overridden by vast_tenant
       vast_tenant: Optional string, vast tenant name, overrides tenant_id
-      vip_ranges: Optional list. Elements are maps with keys/values.
+      vip_ranges: Optional list of objects -
         subnet: Required string, tofu subnet resource name
         start: Required number
         end: Required number
-      ip_ranges: Optional list. Elements are maps with keys/values.
+      ip_ranges: Optional list of strings.
   EOT
   type = map(
     object({
@@ -447,7 +452,7 @@ variable "vast_tenants" {
     Map of vast tenants. Key is tofu resource name. Values are mappings with keys/values:
       allow_locked_users: Optional bool
       allow_disabled_users: Optional bool
-      client_ranges: Optional list, overridden by client_ip_ranges
+      client_ranges: Optional list of objects, overridden by client_ip_ranges
         subnet: Required string, tofu subnet resource name
         start: Required number
         end: Required number
