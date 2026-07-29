@@ -455,6 +455,13 @@ variable "vast_tenants" {
 }
 
 variable "vast_info" {
+  description = <<-EOT
+  Object for vast information.
+    username: optional string
+    password: optional string
+    host    : optional string
+    port    : optional number
+  EOT
   type = object {
     username = optional(string)
     password = optional(string)
