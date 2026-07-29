@@ -8,9 +8,9 @@ terraform {
 }
 
 provider "vastdata" {
-  username        = var.username
-  port            = 443
-  password        = var.password
-  host            = var.vast_host
+  username        = try(var.vast_info.username, null)
+  port            = try(var.vast_info.port, 443)
+  password        = try(var.vast_info.password)
+  host            = try(var.vast_info.host, null)
   skip_ssl_verify = true
 }

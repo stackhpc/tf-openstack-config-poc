@@ -342,37 +342,17 @@ variable "images"{
   default = {}
 }
 
-variable "shares"{
-
-  type = map(
-    object({
-      share_proto       = string
-      size              = number
-      region            = optional(string)
-      description       = optional(string)
-      share_type        = optional(string)
-      snapshot_id       = optional(string)
-      is_public         = optional(bool, false)
-      metadata          = optional(string)
-      share_network_id  = optional(string)
-      availability_zone = optional(string)
-    })
-  )
-  default = {}
-}
-
 variable "sharetypes" {
   description = <<-EOT
     Mapping of sharetype definitions. Key is sharetype name. Values are mappings with keys/values:
       description: Optional string
       is_public: Optional bool, default true
-      extra_specs: Required list
+      extra_specs: Required map
         driver_handles_share_servers: Required bool
         snapshot_support: Optional bool
         share_backend_name: Required string
-        vippoolname: Required string, tofu resource vippool name
+        vast_vip_pool_name: Required string, tofu resource vippool name
   EOT
-
   type = map(
     object({
       description = optional(string)
@@ -383,7 +363,7 @@ variable "sharetypes" {
           driver_handles_share_servers = bool
           snapshot_support             = optional(bool, null)
           share_backend_name           = string
-          vippoolname                  = string
+          vast_vip_pool_name           = string
         })
       )
     })
@@ -474,19 +454,16 @@ variable "vast_tenants" {
   default = {}
 }
 
-
-variable "password" {
-  sensitive = true
+variable "vast_info" {
+  type = object {
+    username = optional(string)
+    password = optional(string)
+    host     = optional(string)
+    port     = optional(number)
+  }
+  default  = null
+  sensitve = true
 }
-
-variable "vast_host" {
-  default = "10.3.2.10"
-}
-
-variable "username" {
-  default = "openstack-manila"
-}
-
 
 # TODO: more outputs?
 output "projects" {
