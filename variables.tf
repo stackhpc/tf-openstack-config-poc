@@ -337,25 +337,6 @@ variable "images"{
   default = {}
 }
 
-variable "shares"{
-
-  type = map(
-    object({
-      share_proto       = string
-      size              = number
-      region            = optional(string)
-      description       = optional(string)
-      share_type        = optional(string)
-      snapshot_id       = optional(string)
-      is_public         = optional(bool, false)
-      metadata          = optional(string)
-      share_network_id  = optional(string)
-      availability_zone = optional(string)
-    })
-  )
-  default = {}
-}
-
 # TODO: more outputs?
 output "projects" {
   #value = {for k, v in openstack_identity_project_v3.project: k => v.id}
