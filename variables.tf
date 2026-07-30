@@ -454,24 +454,6 @@ variable "vast_tenants" {
   default = {}
 }
 
-variable "vast_info" {
-  description = <<-EOT
-  Object for vast information.
-    username: optional string
-    password: optional string
-    host    : optional string
-    port    : optional number
-  EOT
-  type = object {
-    username = optional(string)
-    password = optional(string)
-    host     = optional(string)
-    port     = optional(number)
-  }
-  default  = null
-  sensitve = true
-}
-
 # TODO: more outputs?
 output "projects" {
   #value = {for k, v in openstack_identity_project_v3.project: k => v.id}
