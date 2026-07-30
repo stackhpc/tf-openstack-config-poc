@@ -1,3 +1,13 @@
+> **WARNING:**
+>
+>The resources:
+>- `openstack_sharedfilesystem_sharetype_v2` used for `sharetypes`.
+>- `openstack_sharedfilesystem_sharetype_access_v2` used for `sharetypes_access`.
+>
+>Are currently in development in opentofu. Therefore, they require
+>a custom provider to use.
+
+
 ## Sharetypes
 
 To create a sharetype,
