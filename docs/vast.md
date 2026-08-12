@@ -75,8 +75,6 @@ To set the vast host set:
 vast_host = string
 ```
 
-By default `vast_host` is set to `10.3.2.10` .
-
 ## Vast username
 
 To set the vast username set:
@@ -84,5 +82,3 @@ To set the vast username set:
 ```console
 username = string
 ```
-
-By default `username` is set to `openstack-manila` .

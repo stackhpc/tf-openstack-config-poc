@@ -38,7 +38,7 @@ Argument reference:
     - `driver_handles_share_servers` (Required) bool
     - `snapshot_support` (Optional) bool
     - `share_backend_name` (Required) string
-    - `vippoolname` (Required) string
+    - `vast_vippool_name` (Optional) string, note: required for VAST
 
 ## Sharetypes Access
 
