@@ -6,12 +6,12 @@ resource "openstack_sharedfilesystem_sharetype_v2" "sharetypes" {
     description = lookup(each.value, "description", null)
     is_public  = lookup(each.value, "is_public", true)
 
-    extra_specs = {
-        driver_handles_share_servers = each.value.extra_specs.driver_handles_share_servers
-        snapshot_support             = lookup(each.value.extra_specs, "snapshot_support", null)
-        share_backend_name           = each.value.extra_specs.share_backend_name
-        "vast:vippoolname"           = vastdata_vip_pool.vippools[each.value.extra_specs.vast_vip_pool_name].name
-    }
+    extra_specs = merge(
+        { for k, v in each.value.extra_specs: k => tostring(v) if k != "vast_vippool_name"},
+        contains(keys(each.value.extra_specs), "vast_vippool_name") ? {
+        "vast:vippoolname" = try(vastdata_vip_pool.vippools[each.value.extra_specs.vast_vippool_name].name, null)
+        } : {}
+    )
 }
 
 resource "openstack_sharedfilesystem_sharetype_access_v2" "sharetypes_access" {

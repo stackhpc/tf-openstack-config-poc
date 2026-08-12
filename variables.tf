@@ -351,23 +351,24 @@ variable "sharetypes" {
         driver_handles_share_servers: Required bool
         snapshot_support: Optional bool
         share_backend_name: Required string
-        vast_vip_pool_name: Required string, tofu resource vippool name
+        vast_vippool_name: Optional string, tofu resource vippool name. Required for VAST.
   EOT
   type = map(
     object({
       description = optional(string)
       is_public   = optional(bool, true)
 
-      extra_specs = optional(
-        object({
-          driver_handles_share_servers = bool
-          snapshot_support             = optional(bool, null)
-          share_backend_name           = string
-          vast_vip_pool_name           = string
-        })
-      )
+      extra_specs = map(any)
     })
   )
+
+  validation {
+    condition = alltrue([ for k, v in var.sharetypes :
+    contains(keys(v.extra_specs), "driver_handles_share_servers") &&
+    can(tobool(v.extra_specs["driver_handles_share_servers"])) ])
+    error_message = "Each entry's extra_specs must include driver_handles_share_servers (bool)."
+  }
+
   default = {}
 }
 
