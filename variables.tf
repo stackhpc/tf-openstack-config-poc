@@ -350,7 +350,7 @@ variable "sharetypes" {
       extra_specs: Required map
         driver_handles_share_servers: Required bool
         snapshot_support: Optional bool
-        share_backend_name: Required string
+        share_backend_name: Optional string
         vast_vippool_name: Optional string, tofu resource vippool name. Required for VAST.
   EOT
   type = map(
