@@ -1,11 +1,10 @@
-> **WARNING:**
+> [!WARNING]
+> The resources:
+> - `openstack_sharedfilesystem_sharetype_v2` used for `sharetypes`.
+> - `openstack_sharedfilesystem_sharetype_access_v2` used for `sharetypes_access`.
 >
->The resources:
->- `openstack_sharedfilesystem_sharetype_v2` used for `sharetypes`.
->- `openstack_sharedfilesystem_sharetype_access_v2` used for `sharetypes_access`.
->
->Are currently in development in opentofu. Therefore, they require
->a custom provider to use.
+> Are currently in development in opentofu. Therefore, they require
+> a custom provider to use.
 
 
 ## Sharetypes
@@ -34,11 +33,12 @@ sharetypes = {
 Argument reference:
 - `description` (Optional) string
 - `is_public` (Optional) bool, default true
-- `extra_specs` (Required), block supports:
+- `extra_specs` (Required), block:
     - `driver_handles_share_servers` (Required) bool
     - `snapshot_support` (Optional) bool
-    - `share_backend_name` (Required) string
+    - `share_backend_name` (Optional) string
     - `vast_vippool_name` (Optional) string, note: required for VAST
+    - can contain any additional vars if needed
 
 ## Sharetypes Access
 

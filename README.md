@@ -49,6 +49,9 @@ The resources defined in your configuration can then be created using:
 tofu apply
 ```
 
+For user guide see [docs/guide.md](docs/guide.md). The `docs/` directory contains
+information and examples for all supported resources.
+
 For more comprehensive examples see the `examples/` directory. The example
 `arcus` demonstrates how to use variables and the [merge function](https://opentofu.org/docs/language/functions/merge/)
 to minimise repeated configuration.
@@ -209,37 +212,6 @@ committed, it does not matter.
 - Note that the `--output` argument can be used to determine where files are
   generated.
 
-## VAST Support
+## Vast Support
 
-Support for resources:
-- `vastdata_vip_pool`
-- `vastdata_tenant`
-
-To use the VAST resources, you'll need a `provider.tf` file in your `tofu/` dir containing
-the required config:
-
-```shell
-terraform {
-  required_providers {
-    vastdata = {
-      source = "vast-data/vastdata"
-      version = "2.1.1"
-    }
-  }
-}
-
-provider "vastdata" {
-  username        =    #string
-  port            =    #number
-  password        = var.vast_password #string
-  host            =    #string
-  skip_ssl_verify = true
-}
-
-variable "vast_password" {
-  sensitive = true
-}
-```
-
-Filling in the missing variables in the `provider "vastdata"` block. More infomation
-on the vastdata provider config can be found in the [HashiCorp Terrafrom docs](https://registry.terraform.io/providers/vast-data/vastdata/latest/docs#example-usage).
+See [docs/vast.md](docs/vast.md).

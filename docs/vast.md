@@ -67,18 +67,33 @@ Argument reference:
     - `end` (Required) number
 - `client_ip_ranges` (Optional) list. Overrides `client_ranges`.
 
-## Vast host
+## Vast Provider
 
-To set the vast host set:
+To use the VAST resources, you'll need a `provider.tf` file in your `tofu/` dir containing
+the required config:
 
-```console
-vast_host = string
+```shell
+terraform {
+  required_providers {
+    vastdata = {
+      source = "vast-data/vastdata"
+      version = "2.1.1"
+    }
+  }
+}
+
+provider "vastdata" {
+  username        =    #string
+  port            =    #number
+  password        = var.vast_password #string
+  host            =    #string
+  skip_ssl_verify = true
+}
+
+variable "vast_password" {
+  sensitive = true
+}
 ```
 
-## Vast username
-
-To set the vast username set:
-
-```console
-username = string
-```
+Filling in the missing variables in the `provider "vastdata"` block. More infomation
+on the vastdata provider config can be found in the [HashiCorp Terrafrom docs](https://registry.terraform.io/providers/vast-data/vastdata/latest/docs#example-usage).
