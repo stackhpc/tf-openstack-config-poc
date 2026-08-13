@@ -369,6 +369,14 @@ variable "sharetypes" {
     error_message = "Each entry's extra_specs must include driver_handles_share_servers (bool)."
   }
 
+  validation {
+    condition = alltrue([ for k, v in var.sharetypes :
+    !contains(keys(v.extra_specs), "vast_vippool_name") ||
+    can(vastdata_vip_pool.vippools[v.extra_specs.vast_vippool_name].name)
+    ])
+    error_message = "vast_vippool_name given does not exsit"
+  }
+
   default = {}
 }
 
