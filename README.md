@@ -212,6 +212,6 @@ committed, it does not matter.
 - Note that the `--output` argument can be used to determine where files are
   generated.
 
-## Vast Support
+## VAST Support
 
 See [docs/vast.md](docs/vast.md).
