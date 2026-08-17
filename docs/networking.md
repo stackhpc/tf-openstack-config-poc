@@ -3,7 +3,7 @@
 Note that:
 
 - Networks (and their subnets) and routers do not necessarily have to be associated with a project. If they are this association can be made with the project's name (if the project is controllled by this config) or by a project/tenant id from OpenStack (if it is not).
-- The names in OpenStack for networks, subnets and routers are not necessarily unique across projects. Therefore these resources have a tofu resource name which must be unique across projects, which can be used to refer to them for other resources. It is suggested that a convention of using $NAME:$PROJECT_NAME is used.
+- The names in OpenStack for networks, subnets and routers are not necessarily unique across projects. These resources have a tofu resource name which must be unique across projects, which can be used to refer to them for other resources. It is suggested that a convention $NAME:$PROJECT_NAME is used.
 
 
 ## Networks

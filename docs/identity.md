@@ -26,8 +26,7 @@ Argument reference:
 - `password` (Optional) string
 - `default_project` (Optional) string. Project name.
 
-For users to have access to projects - groups and role assignments need to be created then
-users are assigned the corresponding groups that match their `role:project` needs.
+For users to have access to projects - groups and role assignments need to be created. Users are then assigned the corresponding groups that match their `role:project` needs.
 
 ## Groups
 
