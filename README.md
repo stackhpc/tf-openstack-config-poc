@@ -49,6 +49,9 @@ The resources defined in your configuration can then be created using:
 tofu apply
 ```
 
+For user guide see [docs/guide.md](docs/guide.md). The `docs/` directory contains
+information and examples for all supported resources.
+
 For more comprehensive examples see the `examples/` directory. The example
 `arcus` demonstrates how to use variables and the [merge function](https://opentofu.org/docs/language/functions/merge/)
 to minimise repeated configuration.
@@ -100,65 +103,6 @@ The "Import?" column refers to support for [importing existing openstack configu
 | Image elements    | No         | N/A      | Considered out of scope |
 | Ratings           | No         | N/A      | |
 
-## Network config example
-The following is an example config for how to use the new network support. A single
-project is defined which contains a single subnet.
-
-Note that:
-- Networks (and their subnets) and routers do not necessarily have to be associated
-with a project. If they are this association can be made with the project's name
-(if the project is controllled by this config) or by a project/tenant id from
-OpenStack (if it is not).
-- The names in OpenStack for networks, subnets and routers are not necessarily unique
-across projects. Therefore these resources have a tofu resource name which must be
-unique across projects, which can be used to refer to them for other resources.
-It is suggested that a convention of using `$NAME:$PROJECT_NAME` is used.
-
-
-```
-module "openstack" {
-  source = "github.com/stackhpc/tofu-openstack-config?ref=main"
-  projects = {
-    "demo-project" = {
-      compute_quota = {
-      }
-      network_quota = {
-      }
-      blockstorage_quota = {
-      }
-    }
-  }
-
-  networks = {
-    "demo-network:demo-project" = { # unique tofu resource name
-      name = "demo-network" # openstack network name
-      project = "demo-project"
-
-      subnets = {
-        "demo-subnet:demo-project" = { # unique tofu resource name
-          name = "demo-subnet" # openstack subnet name
-          cidr = "10.0.0.0/24"
-        }
-      }
-    }
-  }
-
-  routers = {
-    "demo-router:demo-project"  = { # unique tofu resource name
-      name = "demo-router" # openstack router name
-      project = "demo-project"
-      external_network = "demo-network:demo-project" # unique tofu resource name of network
-      external_fixed_ips = [{
-        subnet = "demo-subnet:demo-project" # unique tofu resource name of subnet
-      }]
-      interfaces = [
-        { subnet = "demo-subnet:demo-project" } # unique tofu resource name of subnet
-      ]
-    }
-  }
-
-}
-```
 
 ## Current Issues
 
@@ -267,3 +211,7 @@ committed, it does not matter.
 - Changes to the `src/` files are picked up when running `tofu-os-cfg`.
 - Note that the `--output` argument can be used to determine where files are
   generated.
+
+## VAST Support
+
+See [docs/vast.md](docs/vast.md).
